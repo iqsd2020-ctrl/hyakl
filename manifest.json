@@ -1,0 +1,52 @@
+{
+  "name": "هياكل النور",
+  "short_name": "هياكل النور",
+  "id": "/",
+  "start_url": ".",
+  "display": "fullscreen",
+  "background_color": "#0f172a",
+  "theme_color": "#064E3B",
+  "description": "مسابقات ومعارف من وحي أهل البيت (ع)",
+  "orientation": "portrait",
+  "categories": [
+    "education",
+    "games"
+  ],
+  "icons": [
+    {
+      "src": "Pic/192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "Pic/512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "Pic/1.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "الشاشة الرئيسية"
+    },
+    {
+      "src": "Pic/2.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "قائمة المسابقات"
+    },
+    {
+      "src": "Pic/3.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "داخل اللعبة"
+    }
+  ]
+}
