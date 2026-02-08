@@ -1,17 +1,21 @@
 {
   "name": "هياكل النور",
   "short_name": "هياكل النور",
+  "description": "مسابقات ومعارف من وحي أهل البيت (ع)",
+  "lang": "ar",
+  "dir": "rtl",
   "id": "/",
-  "start_url": ".",
+  "start_url": "./",
+  "scope": "./",
   "display": "fullscreen",
   "background_color": "#0f172a",
   "theme_color": "#064E3B",
-  "description": "مسابقات ومعارف من وحي أهل البيت (ع)",
   "orientation": "portrait",
   "categories": [
     "education",
     "games"
   ],
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "Pic/192x192.png",
@@ -24,6 +28,28 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "بدء مسابقة",
+      "short_name": "مسابقة",
+      "url": "./?sc=start"
+    },
+    {
+      "name": "بدء مسابقة اكمل النور",
+      "short_name": "اكمل النور",
+      "url": "./?sc=marathon"
+    },
+    {
+      "name": "بدء مسابقة صح وخطا",
+      "short_name": "صح وخطا",
+      "url": "./?sc=tf"
+    },
+    {
+      "name": "عرض لوحة المتصدرين",
+      "short_name": "المتصدرين",
+      "url": "./?sc=leaderboard"
     }
   ],
   "screenshots": [

@@ -157,12 +157,15 @@ function updateProfileUI() {
 
     const guestAuthBtnProfile = getEl('guest-auth-btn-profile-card');
     const guestAuthBtnModal = getEl('guest-auth-btn-user-modal');
+    const guestAuthBtnLeaderboard = getEl('guest-auth-btn-leaderboard');
     if (typeof isGuestMode === 'function' && isGuestMode()) {
         if (guestAuthBtnProfile) guestAuthBtnProfile.classList.remove('hidden');
         if (guestAuthBtnModal) guestAuthBtnModal.classList.remove('hidden');
+        if (guestAuthBtnLeaderboard) guestAuthBtnLeaderboard.classList.remove('hidden');
     } else {
         if (guestAuthBtnProfile) guestAuthBtnProfile.classList.add('hidden');
         if (guestAuthBtnModal) guestAuthBtnModal.classList.add('hidden');
+        if (guestAuthBtnLeaderboard) guestAuthBtnLeaderboard.classList.add('hidden');
     }
 
 }
@@ -219,6 +222,7 @@ window.openGuestAuth = function() {
         try { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); } catch (_) {}
         try { toggleMenu(false); } catch (_) {}
 
+        try { hide('leaderboard-view'); } catch (_) {}
         try { hide('welcome-area'); } catch (_) {}
         try { hide('bottom-nav'); } catch (_) {}
 
@@ -270,8 +274,44 @@ clearLowHealthVignette();
 
     // ✅ تحديث بطاقة (صح/خطأ) في الرئيسية
     try { if (typeof updateTrueFalseCardStats === 'function') updateTrueFalseCardStats(); } catch (_) {}
+    try { window.__runAppShortcutOnce && window.__runAppShortcutOnce(); } catch (_) {}
 }
 
+window.__runAppShortcutOnce = window.__runAppShortcutOnce || function () {
+    try {
+        if (sessionStorage.getItem('__pwa_shortcut_done') === '1') return;
+
+        const params = new URLSearchParams(window.location.search || '');
+        const sc = params.get('sc');
+        if (!sc) return;
+
+        sessionStorage.setItem('__pwa_shortcut_done', '1');
+
+        // تنظيف الرابط بعد قراءة الاختصار (حتى لا يتكرر عند الرجوع للرئيسية)
+        try {
+            const u = new URL(window.location.href);
+            u.searchParams.delete('sc');
+            window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash);
+        } catch (_) {}
+
+        const map = {
+            start: 'ai-generate-btn',
+            marathon: 'btn-marathon-start',
+            tf: 'btn-tf-start',
+            leaderboard: 'bottom-leaderboard-btn'
+        };
+        const targetId = map[sc];
+        if (!targetId) return;
+
+        // تأخير بسيط لضمان اكتمال ربط الأحداث
+        setTimeout(() => {
+            try {
+                const el = document.getElementById(targetId);
+                if (el) el.click();
+            } catch (_) {}
+        }, 60);
+    } catch (_) {}
+};
 
 function openSelectionModal(mode) {
     currentSelectionMode = mode;
@@ -1203,14 +1243,14 @@ function renderQuestion() {
         }
     } catch (_) {}
 
-    getEl('quiz-topic-display').textContent = q.topic || quizState.contextTopic;
+    getEl('quiz-topic-display').textContent = (window.toArabicDigits ? window.toArabicDigits(q.topic || quizState.contextTopic) : (q.topic || quizState.contextTopic));
 
     // كتابة نص السؤال
-    typeWriter('question-text', q.question);
+    typeWriter('question-text', (window.toArabicDigits ? window.toArabicDigits(q.question) : q.question));
 
     // عدّاد/تقدم
     if (quizState.mode === 'marathon') {
-        getEl('question-counter-text').textContent = `${quizState.idx + 1}`;
+        getEl('question-counter-text').textContent = formatNumberAr(quizState.idx + 1);
         const dots = getEl('progress-dots');
 
         if (dots && !document.getElementById('quiz-progress-fill')) {
@@ -1269,14 +1309,14 @@ function renderQuestion() {
             const isTrue = (String(o).trim() === 'صح') || (i === 0);
 
             if (iconEl) iconEl.textContent = isTrue ? 'check_circle' : 'cancel';
-            if (textEl) textEl.textContent = o;
+            if (textEl) textEl.textContent = (window.toArabicDigits ? window.toArabicDigits(o) : o);
 
             btn.classList.add(isTrue ? 'tf-true' : 'tf-false');
         } else {
             const charEl = btn.querySelector('.option-char');
             const textEl = btn.querySelector('.option-text');
             if (charEl) charEl.textContent = formatNumberAr(i + 1);
-            if (textEl) textEl.textContent = o;
+            if (textEl) textEl.textContent = (window.toArabicDigits ? window.toArabicDigits(o) : o);
         }
 
         btn.onclick = () => selectAnswer(i, btn);

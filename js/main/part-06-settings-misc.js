@@ -268,7 +268,7 @@ let __giftdayApiPromise = null;
 async function __getGiftdayAPI() {
     if (__giftdayApiPromise) return __giftdayApiPromise;
 
-    __giftdayApiPromise = import(`./giftday.js?v=4.0.4`)
+    __giftdayApiPromise = import(`../giftday.js?v=4.0.4`)
         .then((mod) => {
             if (!mod || typeof mod.createGiftdayAPI !== 'function') return null;
             return mod.createGiftdayAPI({
@@ -641,5 +641,3 @@ bind('nav-achievements', 'click', () => {
     // تسجيل المشهد في المتصفح للزر الرجوع
     window.history.pushState({ view: 'achievements' }, "", "");
 });
-
-

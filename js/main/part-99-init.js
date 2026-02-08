@@ -84,5 +84,114 @@ onAuthStateChanged(auth, async (user) => {
         }
         return;
     }
+    // ✅ تحويل الأرقام الظاهرة إلى أرقام عربية (٠١٢٣٤٥٦٧٨٩) أينما ظهرت في واجهة التطبيق
+window.toArabicDigits = window.toArabicDigits || function (value) {
+    const s = (value === null || value === undefined) ? '' : String(value);
+    if (!/\d/.test(s)) return s;
+    return s.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
+};
+
+window.applyArabicDigits = window.applyArabicDigits || function (root) {
+    try {
+        root = root || document.body;
+        if (!root) return;
+
+        const shouldSkip = (el) => {
+            if (!el || el.nodeType !== 1) return false;
+            return !!el.closest('script,style,noscript,template,textarea,input,select,[contenteditable="true"]');
+        };
+
+        const convertTextNode = (node) => {
+            const v = node.nodeValue;
+            if (!v || !/\d/.test(v)) return;
+            const nv = window.toArabicDigits(v);
+            if (nv !== v) node.nodeValue = nv;
+        };
+
+        if (root.nodeType === 3) {
+            convertTextNode(root);
+            return;
+        }
+
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+            acceptNode(node) {
+                if (!node.nodeValue || !/\d/.test(node.nodeValue)) return NodeFilter.FILTER_REJECT;
+                const p = node.parentElement;
+                if (!p) return NodeFilter.FILTER_REJECT;
+                if (shouldSkip(p)) return NodeFilter.FILTER_REJECT;
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+
+        let n;
+        while ((n = walker.nextNode())) {
+            convertTextNode(n);
+        }
+    } catch (_) {}
+};
+
+window.enableArabicDigits = window.enableArabicDigits || function () {
+    try {
+        if (window.__arabicDigitsEnabled) return;
+        window.__arabicDigitsEnabled = true;
+
+        // تطبيق فوري
+        try { window.applyArabicDigits(document.body); } catch (_) {}
+
+        // مراقبة أي تحديثات لاحقة في الواجهة
+        const mo = new MutationObserver((mutations) => {
+            try {
+                for (const m of mutations) {
+                    if (m.type === 'characterData') {
+                        const node = m.target;
+                        if (node && node.nodeType === 3) {
+                            const p = node.parentElement;
+                            if (p && !p.closest('script,style,noscript,template,textarea,input,select,[contenteditable="true"]')) {
+                                const v = node.nodeValue;
+                                if (v && /\d/.test(v)) {
+                                    const nv = window.toArabicDigits(v);
+                                    if (nv !== v) node.nodeValue = nv;
+                                }
+                            }
+                        }
+                        continue;
+                    }
+
+                    if (m.type === 'childList') {
+                        m.addedNodes && m.addedNodes.forEach((node) => {
+                            if (!node) return;
+
+                            if (node.nodeType === 3) {
+                                const p = node.parentElement;
+                                if (p && !p.closest('script,style,noscript,template,textarea,input,select,[contenteditable="true"]')) {
+                                    const v = node.nodeValue;
+                                    if (v && /\d/.test(v)) {
+                                        const nv = window.toArabicDigits(v);
+                                        if (nv !== v) node.nodeValue = nv;
+                                    }
+                                }
+                            } else if (node.nodeType === 1) {
+                                if (!node.closest('script,style,noscript,template,textarea,input,select,[contenteditable="true"]')) {
+                                    window.applyArabicDigits(node);
+                                }
+                            }
+                        });
+                    }
+                }
+            } catch (_) {}
+        });
+
+        try { mo.observe(document.body, { subtree: true, childList: true, characterData: true }); } catch (_) {}
+        window.__arabicDigitsObserver = mo;
+    } catch (_) {}
+};
+
+try {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => { try { window.enableArabicDigits(); } catch (_) {} });
+    } else {
+        window.enableArabicDigits();
+    }
+} catch (_) {}
 });
 

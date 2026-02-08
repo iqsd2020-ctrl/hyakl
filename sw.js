@@ -1,6 +1,6 @@
 const CONFIG = {
   // Change this when you deploy a new build (forces new cache names)
-  version: "4.0.14",
+  version: "4.0.15",
 
   // Local assets only (no external URLs here)
   staticAssets: [
@@ -44,7 +44,7 @@ const CONFIG = {
 const CACHE_PREFIX = "ahlulbayt-quiz";
 const PRECACHE = `${CACHE_PREFIX}-precache-${CONFIG.version}`;
 const RUNTIME = `${CACHE_PREFIX}-runtime-${CONFIG.version}`;
-const FONT_CACHE = `${CACHE_PREFIX}-fonts-v1`;
+const FONT_CACHE = `${CACHE_PREFIX}-fonts-${CONFIG.version}`;
 
 const OFFLINE_FALLBACK_URL = new URL("./", self.registration.scope).href;
 
@@ -85,6 +85,9 @@ async function putIfCacheable(cacheName, request, response) {
 
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
+    try { await caches.delete(PRECACHE); } catch (_) {}
+    try { await caches.delete(RUNTIME); } catch (_) {}
+    try { await caches.delete(FONT_CACHE); } catch (_) {}
     const cache = await caches.open(PRECACHE);
 
     // Defensive filter: ensure we never precache external URLs
@@ -111,9 +114,7 @@ self.addEventListener("activate", (event) => {
     const keys = await caches.keys();
     await Promise.all(
       keys.map((key) => {
-        const isOurCache =
-          key.startsWith(`${CACHE_PREFIX}-precache-`) ||
-          key.startsWith(`${CACHE_PREFIX}-runtime-`);
+        const isOurCache = key.startsWith(`${CACHE_PREFIX}-`);
         const isCurrent = key === PRECACHE || key === RUNTIME || key === FONT_CACHE;
         if (isOurCache && !isCurrent) return caches.delete(key);
         return null;
@@ -121,6 +122,14 @@ self.addEventListener("activate", (event) => {
     );
 
     await self.clients.claim();
+
+    // Force reload open pages/apps so new assets load immediately
+    try {
+      const list = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of list) {
+        try { await client.navigate(client.url); } catch (_) {}
+      }
+    } catch (_) {}
   })());
 });
 
@@ -157,7 +166,7 @@ self.addEventListener("fetch", (event) => {
   if (req.mode === "navigate" || req.destination === "document") {
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(new Request(req, { cache: "reload" }));
         if (fresh && fresh.ok && url.origin === self.location.origin) {
           await putIfCacheable(RUNTIME, req, fresh);
         }
@@ -181,7 +190,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin === self.location.origin && url.pathname.includes('/Data/Noor/') && url.pathname.endsWith('.json')) {
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(new Request(req, { cache: "reload" }));
         if (fresh && fresh.ok) await putIfCacheable(RUNTIME, req, fresh);
         return fresh;
       } catch (_) {
@@ -192,18 +201,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Same-origin assets: cache-first, then fetch and store in runtime
+  // Same-origin assets: network-first (reload), fallback to cache
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
-      const cached = await caches.match(req);
-      if (cached) return cached;
-
       try {
-        const fresh = await fetch(req);
+        const fresh = await fetch(new Request(req, { cache: "reload" }));
         if (fresh && fresh.ok) await putIfCacheable(RUNTIME, req, fresh);
         return fresh;
       } catch (_) {
-        return Response.error();
+        const cached = await caches.match(req);
+        return cached || Response.error();
       }
     })());
     return;

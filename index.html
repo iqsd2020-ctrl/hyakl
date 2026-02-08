@@ -310,9 +310,24 @@
                 </header>
 
                 <!-- Banner (Monasbat) -->
-                <div id="monasbat-banner" class="w-full mt-4 mb-5 rounded-2xl border border-amber-500/20 bg-slate-900/55 backdrop-blur-md px-4 py-3 shadow-lg shadow-black/30">
-                    <div id="monasbat-hijri-date" class="text-[12px] text-amber-200/80 font-bold mb-1 font-heading">...</div>
-                    <div id="monasbat-text" class="text-sm text-slate-100 leading-relaxed whitespace-pre-line">...</div>
+                <div id="monasbat-banner" class="w-full mt-3 mb-4 rounded-3xl border border-emerald-500/25 bg-gradient-to-br from-emerald-900/30 via-slate-900/75 to-slate-900/55 backdrop-blur-md px-4 py-3 shadow-2xl shadow-black/50 relative overflow-hidden">
+                    <div class="absolute -right-10 -top-10 w-44 h-44 bg-emerald-400/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute -left-10 -bottom-10 w-44 h-44 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div class="absolute right-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-amber-400/70 via-emerald-400/60 to-transparent"></div>
+
+                    <div class="flex items-center justify-between gap-4 relative z-10">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-9 h-9 rounded-2xl bg-slate-950/35 border border-emerald-500/20 flex items-center justify-center shadow-lg shrink-0">
+                                <span class="material-symbols-rounded text-xl text-amber-300">event</span>
+                            </div>
+                            <div class="min-w-0">
+                                <div class="text-[11px] text-slate-400 font-bold">المناسبات</div>
+                                <div id="monasbat-hijri-date" class="text-xs text-emerald-200 font-bold font-heading truncate">...</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="monasbat-text" class="mt-3 text-sm text-slate-100 leading-7 whitespace-pre-line relative z-10">...</div>
                 </div>
 
                 <!-- Profile card -->
@@ -320,7 +335,12 @@
                     <div class="absolute -left-10 -top-10 w-40 h-40 bg-amber-400 opacity-5 rounded-full blur-3xl pointer-events-none"></div>
 
                     <button id="guest-auth-btn-profile-card" type="button" class="hidden absolute top-4 left-4 w-10 h-10 rounded-full bg-slate-800 border border-amber-500/40 text-amber-300 flex items-center justify-center active:scale-95 transition" title="تسجيل الدخول / التسجيل" aria-label="تسجيل الدخول أو التسجيل" onclick="try{event.stopPropagation();}catch(_){} try{window.openGuestAuth&&window.openGuestAuth()}catch(_){}">
-                        <span class="material-symbols-rounded text-xl">login</span>
+                        <svg class="google-mark" viewBox="0 0 48 48" aria-hidden="true">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.73 1.22 9.25 3.62l6.9-6.9C35.97 2.36 30.4 0 24 0 14.62 0 6.51 5.38 2.56 13.22l8.05 6.26C12.6 13.06 17.87 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.5 24.5c0-1.58-.14-3.1-.4-4.58H24v8.68h12.65c-.54 2.88-2.16 5.33-4.6 6.97l7.03 5.46C43.7 36.9 46.5 31.3 46.5 24.5z"/>
+                            <path fill="#FBBC05" d="M10.61 28.48a14.5 14.5 0 0 1 0-8.96l-8.05-6.26a24 24 0 0 0 0 21.48l8.05-6.26z"/>
+                            <path fill="#34A853" d="M24 48c6.4 0 11.77-2.12 15.69-5.77l-7.03-5.46c-1.95 1.31-4.44 2.08-8.66 2.08-6.13 0-11.4-3.56-13.39-8.72l-8.05 6.26C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
                     </button>
 
                     <div class="flex items-center gap-4 relative z-10">
@@ -552,6 +572,17 @@
             </div>
 
             <div id="leaderboard-content" class="flex-1 overflow-y-auto px-4 pb-24">
+                <button id="guest-auth-btn-leaderboard" type="button" class="hidden w-full mb-5 py-3 rounded-2xl bg-white text-slate-900 font-bold flex items-center justify-center gap-3 border border-white/10 shadow-lg shadow-black/20 active:scale-95 transition" title="تسجيل الدخول / التسجيل" aria-label="تسجيل الدخول أو التسجيل" onclick="try{window.openGuestAuth&&window.openGuestAuth()}catch(_){}">
+    <span class="w-6 h-6 flex items-center justify-center" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#EA4335" d="M24 9.5c3.54 0 6.73 1.22 9.25 3.62l6.87-6.87C35.92 2.38 30.28 0 24 0 14.64 0 6.49 5.38 2.56 13.22l8.03 6.23C12.45 13.02 17.76 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.15 24.55c0-1.57-.14-3.08-.4-4.55H24v9.08h12.45c-.54 2.9-2.18 5.36-4.66 7.02l7.52 5.84c4.4-4.06 6.84-10.04 6.84-17.39z"/>
+            <path fill="#FBBC05" d="M10.59 28.45c-.5-1.48-.79-3.06-.79-4.7s.29-3.22.79-4.7l-8.03-6.23C.92 16.24 0 20.02 0 23.75s.92 7.51 2.56 10.93l8.03-6.23z"/>
+            <path fill="#34A853" d="M24 48c6.28 0 11.55-2.08 15.4-5.66l-7.52-5.84c-2.08 1.4-4.75 2.23-7.88 2.23-6.24 0-11.55-3.52-13.41-8.95l-8.03 6.23C6.49 42.62 14.64 48 24 48z"/>
+        </svg>
+    </span>
+    <span class="font-heading">تسجيل الدخول / التسجيل</span>
+</button>
                 <div id="leaderboard-reset-timer" class="hidden mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-center animate-fade-in">
                     <p class="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-2">سيتم تصفير لوحة المتصدرين بعد</p>
                     <div id="reset-timer-display" class="text-2xl font-bold text-white font-mono tracking-widest">0:00:00:00</div>
@@ -1080,9 +1111,14 @@
                 </div>
                 <div class="flex items-center gap-2">
                     <button id="guest-auth-btn-user-modal" type="button" class="hidden w-8 h-8 rounded-full bg-slate-800 text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 border border-amber-500/30 transition flex items-center justify-center" title="تسجيل الدخول / التسجيل" aria-label="تسجيل الدخول أو التسجيل" onclick="try{window.openGuestAuth&&window.openGuestAuth()}catch(_){}">
-                        <span class="material-symbols-rounded text-lg">login</span>
+                        <svg class="google-mark" viewBox="0 0 48 48" aria-hidden="true">
+                            <path fill="#EA4335" d="M24 9.5c3.54 0 6.73 1.22 9.25 3.62l6.9-6.9C35.97 2.36 30.4 0 24 0 14.62 0 6.51 5.38 2.56 13.22l8.05 6.26C12.6 13.06 17.87 9.5 24 9.5z"/>
+                            <path fill="#4285F4" d="M46.5 24.5c0-1.58-.14-3.1-.4-4.58H24v8.68h12.65c-.54 2.88-2.16 5.33-4.6 6.97l7.03 5.46C43.7 36.9 46.5 31.3 46.5 24.5z"/>
+                            <path fill="#FBBC05" d="M10.61 28.48a14.5 14.5 0 0 1 0-8.96l-8.05-6.26a24 24 0 0 0 0 21.48l8.05-6.26z"/>
+                            <path fill="#34A853" d="M24 48c6.4 0 11.77-2.12 15.69-5.77l-7.03-5.46c-1.95 1.31-4.44 2.08-8.66 2.08-6.13 0-11.4-3.56-13.39-8.72l-8.05 6.26C6.51 42.62 14.62 48 24 48z"/>
+                        </svg>
                     </button>
-                    <button id="btn-back-bag" class="close-modal w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition flex items-center justify-center" aria-label="رجوع"><span class="material-symbols-rounded text-xl">arrow_forward</span></button>
+                    <button id="btn-back-bag" class="close-modal w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition flex items-center justify-center" aria-label="رجوع"><span class="material-symbols-rounded text-xl">close</span></button>
                 </div>
             </div>
         </div>
@@ -1463,7 +1499,99 @@
 </div>
 
 
+<div id="pwa-install-modal" class="modal-overlay z-[80]">
+    <div class="modal-box border-2 border-amber-500/50 text-center bg-[#0f172a] relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none"></div>
+
+        <div class="mb-4 flex justify-center relative z-10">
+            <span class="material-symbols-rounded text-5xl text-amber-400 animate-bounce">download</span>
+        </div>
+
+        <h3 class="text-2xl font-bold text-white mb-2 font-heading relative z-10">ثبّت التطبيق الآن</h3>
+        <p id="pwa-install-msg" class="text-slate-300 text-sm mb-6 leading-relaxed relative z-10">ثبّت التطبيق على هاتفك للوصول السريع والعمل بسلاسة.</p>
+
+        <div class="relative z-10 flex flex-col gap-3">
+            <button id="btn-pwa-install" class="btn-gold-action w-full py-3">تثبيت التطبيق</button>
+            <button id="btn-pwa-install-close" class="w-full text-slate-500 hover:text-white text-sm transition font-heading">لاحقًا</button>
+        </div>
+    </div>
+</div>
+
 <script>
+    (function () {
+        const isStandalone =
+            (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+            (window.matchMedia && window.matchMedia('(display-mode: fullscreen)').matches) ||
+            (window.matchMedia && window.matchMedia('(display-mode: minimal-ui)').matches) ||
+            window.navigator.standalone === true;
+
+        if (isStandalone) return;
+
+        const modal = document.getElementById('pwa-install-modal');
+        const btnInstall = document.getElementById('btn-pwa-install');
+        const btnClose = document.getElementById('btn-pwa-install-close');
+        const msg = document.getElementById('pwa-install-msg');
+
+        if (!modal || !btnInstall) return;
+
+        const ua = (navigator.userAgent || '').toLowerCase();
+        const isIOS = /iphone|ipad|ipod/.test(ua);
+
+        let deferredPrompt = null;
+
+        function showInstallModal() { modal.classList.add('active'); }
+        function hideInstallModal() { modal.classList.remove('active'); }
+
+        // عند التشغيل: iOS فقط نعرض الإرشادات، أما Android/Chrome ننتظر beforeinstallprompt حتى يكون زر التثبيت "مباشر"
+        window.addEventListener('load', () => {
+            if (isIOS && msg) {
+                msg.innerHTML = 'للتثبيت على iPhone: اضغط زر المشاركة ثم اختر <b>إضافة إلى الشاشة الرئيسية</b>.';
+                btnInstall.textContent = 'طريقة التثبيت';
+                btnInstall.disabled = false;
+                showInstallModal();
+            } else {
+                btnInstall.disabled = true;
+                btnInstall.textContent = 'تثبيت التطبيق';
+            }
+        });
+
+        if (btnClose) btnClose.addEventListener('click', hideInstallModal);
+
+        // التقط حدث التثبيت (Android/Chrome) وفعّل زر التثبيت + اعرض النافذة فقط عندما يكون التثبيت جاهز
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            btnInstall.disabled = false;
+            btnInstall.textContent = 'تثبيت التطبيق';
+            if (msg) msg.textContent = 'ثبّت التطبيق على هاتفك للوصول السريع والعمل بسلاسة.';
+            showInstallModal();
+        });
+
+        // بعد التثبيت أخفِ النافذة
+        window.addEventListener('appinstalled', () => {
+            hideInstallModal();
+        });
+
+        // زر التثبيت
+        btnInstall.addEventListener('click', async () => {
+            if (isIOS) return;
+
+            if (!deferredPrompt) {
+                if (msg) msg.innerHTML = 'التثبيت غير متاح الآن. افتح الموقع من <b>Google Chrome</b> أو أعد المحاولة لاحقًا.';
+                return;
+            }
+
+            try {
+                deferredPrompt.prompt();
+                const choice = await deferredPrompt.userChoice;
+                if (choice && choice.outcome === 'dismissed') return;
+            } catch (_) {}
+
+            deferredPrompt = null;
+            hideInstallModal();
+        });
+    })();
+
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('./sw.js')
@@ -1481,7 +1609,7 @@
 
         <div class="mb-6 relative z-10 mt-4">
             <div class="inline-block p-2 rounded-full bg-amber-500/5 border border-amber-500/20 mb-2 animate-bounce">
-                <img src="https://raw.githubusercontent.com/iqsd2020-ctrl/New/refs/heads/main/Pic/33.png" 
+                <img src="Pic/33.png" 
                      class="w-24 h-24 object-contain drop-shadow-[0_0_20px_rgba(251,191,36,0.5)]" 
                      alt="Daily Reward">
             </div>
