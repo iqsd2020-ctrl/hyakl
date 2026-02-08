@@ -3,10 +3,12 @@
 // ==========================================
 
 let isBagSystemInitialized = false;
+let bagPrevViews = [];
+let bagPrevBottomNavHidden = false;
 
 function openBag() {
     toggleMenu(false);
-    
+
     // 1. التهيئة لمرة واحدة فقط (بناء الهيكل)
     if (!isBagSystemInitialized) {
         initBagSystem();
@@ -15,10 +17,52 @@ function openBag() {
 
     // 2. تحديث الحالة فقط (سريع جداً ولا يسبب وميض)
     updateBagState();
-    
-    // 3. فتح النافذة
-    openModal('bag-modal');
+
+    // 3. فتح صفحة الحقيبة/المتجر
+    const bagEl = getEl('bag-modal');
+    if (!bagEl || !bagEl.classList.contains('hidden')) return;
+
+    try { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); } catch (_) {}
+
+    bagPrevViews = [];
+    const viewsToHide = ['welcome-area','quiz-proper','results-area','login-area','auth-loading','achievements-view','leaderboard-view'];
+
+    viewsToHide.forEach(id => {
+        const el = getEl(id);
+        if (el && !el.classList.contains('hidden')) bagPrevViews.push(id);
+        hide(id);
+    });
+
+    bagPrevBottomNavHidden = getEl('bottom-nav')?.classList.contains('hidden');
+    hide('bottom-nav');
+
+    show('bag-modal');
+    window.history.pushState({ view: 'bag' }, "", "");
 }
+
+
+window.closeBagPage = function(fromPopstate = false) {
+    const bagEl = getEl('bag-modal');
+    if (!bagEl || bagEl.classList.contains('hidden')) return;
+
+    hide('bag-modal');
+
+    try { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); } catch (_) {}
+
+    if (Array.isArray(bagPrevViews) && bagPrevViews.length) {
+        bagPrevViews.forEach(id => show(id));
+    } else {
+        try { navToHome(); } catch (_) {}
+    }
+
+    if (!bagPrevBottomNavHidden) show('bottom-nav');
+
+    if (!fromPopstate) {
+        if (window.history.state && window.history.state.view === 'bag') {
+            window.history.back();
+        }
+    }
+};
 
 // دالة البناء الأولي (تعمل مرة واحدة فقط عند فتح التطبيق لأول مرة)
 function initBagSystem() {

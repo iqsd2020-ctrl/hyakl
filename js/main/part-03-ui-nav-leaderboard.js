@@ -37,6 +37,52 @@ const openModal = (id) => {
 };
 
 // ==========================================
+// Favorites: show full question/answer/enrichment in a popup
+// ==========================================
+function openFavDetailModal(favObj) {
+    const modal = getEl('fav-detail-modal');
+    if (!modal || !favObj) return;
+
+    const qEl = getEl('fav-detail-question');
+    const aEl = getEl('fav-detail-answer');
+    const eEl = getEl('fav-detail-enrichment');
+
+    // Fallbacks (keep UI stable even if the object shape changes)
+    const qText = (favObj.question ?? '').toString();
+    const isEnrichmentOnly = favObj.type === 'enrichment';
+
+    if (qEl) qEl.textContent = qText;
+
+    if (isEnrichmentOnly) {
+        if (aEl) aEl.textContent = 'معلومة إثرائية';
+        if (eEl) eEl.textContent = '—';
+    } else {
+        const ansText = (Array.isArray(favObj.options) && typeof favObj.correctAnswer === 'number' && favObj.options[favObj.correctAnswer] != null)
+            ? String(favObj.options[favObj.correctAnswer])
+            : '—';
+
+        const enrichText = (favObj.explanation != null && String(favObj.explanation).trim().length)
+            ? String(favObj.explanation)
+            : 'لا توجد معلومة إثرائية لهذا السؤال.';
+
+        if (aEl) aEl.textContent = ansText;
+        if (eEl) eEl.textContent = enrichText;
+    }
+
+    modal.classList.add('active');
+    if (typeof playSound === 'function') playSound('click');
+}
+
+bind('fav-detail-close', 'click', (e) => {
+    try {
+        e && e.preventDefault && e.preventDefault();
+        e && e.stopPropagation && e.stopPropagation();
+    } catch (_) {}
+    getEl('fav-detail-modal')?.classList.remove('active');
+    if (typeof playSound === 'function') playSound('click');
+});
+
+// ==========================================
 // ✅ إصلاح أزرار الإغلاق (Global Close Handler)
 // ==========================================
 document.addEventListener('click', (e) => {
@@ -46,6 +92,12 @@ document.addEventListener('click', (e) => {
     if (closeBtn) {
         e.preventDefault();
         e.stopPropagation();
+
+        // ✅ إذا كان زر الإغلاق داخل صفحة الحقيبة/المتجر، نغلقها بالطريقة الصحيحة
+        if (closeBtn.closest('#bag-modal')) {
+            try { window.closeBagPage && window.closeBagPage(); } catch (_) {}
+            return;
+        }
 
         // 1. الإغلاق البصري الفوري (لحل مشكلة عدم الاستجابة)
         document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
@@ -68,6 +120,7 @@ document.addEventListener('click', (e) => {
 window.addEventListener('popstate', () => {
     document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     toggleMenu(false);
+    try { window.closeBagPage && window.closeBagPage(true); } catch (_) {}
 });
 
 
@@ -168,14 +221,74 @@ bind('nav-badges', 'click', () => {
 // إلغاء المتغير القديم وتثبيت الوضع على الشهري
 let currentLeaderboardMode = 'monthly';
 
+// ==========================================
+// ✅ Leaderboard Loading Progress (percent bar)
+// ==========================================
+function setLeaderboardLoadingProgress(percent) {
+    const p = Math.max(0, Math.min(100, Math.round(Number(percent) || 0)));
+    const bar = document.getElementById('leaderboard-progress-bar');
+    const label = document.getElementById('leaderboard-progress-label');
+
+    if (bar) bar.style.width = `${p}%`;
+    if (label) {
+        let txt = `${p}%`;
+        try { txt = `${formatNumberAr(p)}%`; } catch (_) {}
+        label.textContent = txt;
+    }
+}
+
+function startLeaderboardLoadingProgress() {
+    let pct = 0;
+    setLeaderboardLoadingProgress(0);
+
+    const intervalId = setInterval(() => {
+        const step = pct < 70 ? 6 : (pct < 90 ? 3 : 1);
+        pct = Math.min(95, pct + step);
+        setLeaderboardLoadingProgress(pct);
+    }, 120);
+
+    return {
+        bumpTo(target) {
+            const t = Math.max(0, Math.min(95, Math.round(Number(target) || 0)));
+            if (t > pct) {
+                pct = t;
+                setLeaderboardLoadingProgress(pct);
+            }
+        },
+        done() {
+            clearInterval(intervalId);
+            pct = 100;
+            setLeaderboardLoadingProgress(100);
+        },
+        stop() {
+            clearInterval(intervalId);
+        }
+    };
+}
+
 // في ملف main.js - استبدل دالة loadLeaderboard بالكامل
 
 // 1. دالة تحميل لوحة المتصدرين (مع جلب البيانات الحية لبطل الشهر)
 async function loadLeaderboard() {
     const container = getEl('leaderboard-list');
     const loading = getEl('leaderboard-loading');
-    
-    // عرض التحميل
+
+    // ✅ إذا كان المستخدم كضيف (زائر): نعرض رسالة تسجيل الدخول بدل رسالة الخطأ
+    try {
+        if (typeof isGuestMode === 'function' && isGuestMode()) {
+            if (loading) loading.classList.add('hidden');
+            if (container) {
+                container.classList.remove('hidden');
+                container.innerHTML = `<div class="text-center text-amber-300 mt-6 font-bold">قم بتسجيل الدخول لعرض المتصدرين</div>`;
+            }
+            return;
+        }
+    } catch (_) {}
+
+    // عرض التحميل + شريط التقدم
+    let progressCtl = null;
+    try { progressCtl = startLeaderboardLoadingProgress(); } catch (_) {}
+
     if (loading) loading.classList.remove('hidden');
     if (container) {
         container.classList.add('hidden');
@@ -184,16 +297,22 @@ async function loadLeaderboard() {
     renderSkeleton('leaderboard', 6);
 
     try {
+        if (progressCtl && progressCtl.bumpTo) progressCtl.bumpTo(12);
+
         const currentMonthKey = getCurrentMonthKey();
         const lastMonthKey = getLastMonthKey();
+
+        if (progressCtl && progressCtl.bumpTo) progressCtl.bumpTo(28);
 
         // --- جلب بطل الشهر الماضي ---
         const winnerDoc = await getDoc(doc(db, "winners", lastMonthKey));
         let lastMonthWinner = null;
 
+        if (progressCtl && progressCtl.bumpTo) progressCtl.bumpTo(45);
+
         if (winnerDoc.exists()) {
             const savedWinnerData = winnerDoc.data();
-            
+
             // محاولة جلب البيانات الحية (الصورة والإطار الحاليين)
             try {
                 if (savedWinnerData.userId) {
@@ -219,9 +338,14 @@ async function loadLeaderboard() {
             }
         }
 
+        if (progressCtl && progressCtl.bumpTo) progressCtl.bumpTo(65);
+
         // --- جلب المتصدرين لهذا الشهر ---
         const q = query(collection(db, "users"), where("monthlyStats.key", "==", currentMonthKey), orderBy("monthlyStats.correct", "desc"), limit(20));
         const s = await getDocs(q);
+
+        if (progressCtl && progressCtl.bumpTo) progressCtl.bumpTo(90);
+        if (progressCtl && progressCtl.done) progressCtl.done();
 
         // إخفاء التحميل وإظهار القائمة
         if (loading) loading.classList.add('hidden');
@@ -253,9 +377,24 @@ async function loadLeaderboard() {
                  renderLeaderboardList(s.docs, container, statusUpdates);
             }, { onlyOnce: true });
         }
-    } catch(e) { 
+    } catch(e) {
         console.error("Leaderboard Error:", e);
-        if (container) container.innerHTML = `<div class="text-center text-red-400 mt-4">خطأ في التحميل، تأكد من الاتصال</div>`;
+
+        if (progressCtl && progressCtl.stop) progressCtl.stop();
+        if (loading) loading.classList.add('hidden');
+
+        const errCode = (e && e.code) ? String(e.code) : '';
+        const permissionDenied = errCode.includes('permission') || errCode.includes('auth');
+        const guestNow = (typeof isGuestMode === 'function' && isGuestMode());
+
+        if (guestNow || permissionDenied) {
+            if (container) {
+                container.classList.remove('hidden');
+                container.innerHTML = `<div class="text-center text-amber-300 mt-6 font-bold">قم بتسجيل الدخول لعرض المتصدرين</div>`;
+            }
+        } else {
+            if (container) container.innerHTML = `<div class="text-center text-red-400 mt-4">خطأ في التحميل، تأكد من الاتصال</div>`;
+        }
     }
 }
 
@@ -396,7 +535,7 @@ function renderLeaderboardList(docs, container, statusUpdates) {
         // row.style.cssText = ''; 
 
         // 1. تعيين الكلاسات الأساسية
-        row.className = `leaderboard-row flex justify-between items-center p-3 mb-3 rounded-xl border-2 transition transform hover:scale-[1.01] cursor-pointer group relative`;
+        row.className = `leaderboard-row flex justify-between items-center p-4 mb-3 rounded-2xl border transition transform hover:scale-[1.01] cursor-pointer group relative`;
         row.classList.add('lb-row');
         let medalHtml = `<span class="text-slate-500 font-mono font-bold text-sm w-6 text-center">#${formatNumberAr(r)}</span>`;
 
@@ -576,7 +715,58 @@ function showPlayerProfile(data) {
     openModal('player-profile-modal');
 }
 
-bind('nav-favs','click',()=>{openModal('fav-modal');const l=getEl('fav-list');l.innerHTML='';if(!userProfile.favorites||userProfile.favorites.length===0){l.innerHTML='<div class="flex flex-col items-center justify-center py-10 opacity-50"><span class="material-symbols-rounded text-4xl mb-2">favorite_border</span><p class="text-xs">لا توجد أسئلة مفضلة</p></div>';return}const tpl=document.getElementById('fav-item-template');userProfile.favorites.forEach((f,i)=>{const clone=tpl.content.cloneNode(true);clone.querySelector('.fav-q').textContent=f.question;clone.querySelector('.fav-a').textContent=`الإجابة: ${f.options[f.correctAnswer]}`;const btn=clone.querySelector('.fav-del-btn');btn.onclick=async()=>{userProfile.favorites.splice(i,1);try{await updateDoc(doc(db,"users",effectiveUserId),{favorites:userProfile.favorites});toast("تم الحذف");getEl('nav-favs').click()}catch(e){toast("خطأ","error")}};l.appendChild(clone)})});
+bind('nav-favs', 'click', () => {
+    openModal('fav-modal');
+    const l = getEl('fav-list');
+    l.innerHTML = '';
+
+    if (!userProfile.favorites || userProfile.favorites.length === 0) {
+        l.innerHTML = '<div class="flex flex-col items-center justify-center py-10 opacity-50"><span class="material-symbols-rounded text-4xl mb-2">favorite_border</span><p class="text-xs">لا توجد أسئلة مفضلة</p></div>';
+        return;
+    }
+
+    const tpl = document.getElementById('fav-item-template');
+    userProfile.favorites.forEach((f, i) => {
+        const clone = tpl.content.cloneNode(true);
+        const item = clone.querySelector('.fav-item');
+        const qEl = clone.querySelector('.fav-q');
+        const aEl = clone.querySelector('.fav-a');
+
+        if (qEl) qEl.textContent = f.question;
+
+        // عرض نص الإجابة بشكل مختصر في القائمة
+        const ansText = (Array.isArray(f.options) && typeof f.correctAnswer === 'number' && f.options[f.correctAnswer] != null)
+            ? String(f.options[f.correctAnswer])
+            : (f.type === 'enrichment' ? 'معلومة إثرائية' : '—');
+        if (aEl) aEl.textContent = `الإجابة: ${ansText}`;
+
+        // فتح نافذة التفاصيل عند الضغط على العنصر
+        if (item) {
+            item.classList.add('cursor-pointer');
+            item.onclick = () => openFavDetailModal(f);
+        }
+
+        // زر الحذف (مع منع فتح التفاصيل عند الضغط عليه)
+        const btn = clone.querySelector('.fav-del-btn');
+        btn.onclick = async (e) => {
+            try {
+                e && e.preventDefault && e.preventDefault();
+                e && e.stopPropagation && e.stopPropagation();
+            } catch (_) {}
+
+            userProfile.favorites.splice(i, 1);
+            try {
+                await updateDoc(doc(db, "users", effectiveUserId), { favorites: userProfile.favorites });
+                toast("تم الحذف");
+                getEl('nav-favs').click();
+            } catch (err) {
+                toast("خطأ", "error");
+            }
+        };
+
+        l.appendChild(clone);
+    });
+});
 
 bind('nav-mistakes', 'click', () => { toggleMenu(false); getEl('review-mistakes-btn').click(); });
 bind('nav-settings', 'click', () => { toggleMenu(false); openModal('settings-modal'); });

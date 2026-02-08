@@ -1,27 +1,28 @@
 const CONFIG = {
   // Change this when you deploy a new build (forces new cache names)
-  version: "4.0.10",
+  version: "4.0.14",
 
   // Local assets only (no external URLs here)
   staticAssets: [
     "./",                 // root (usually serves index.html)
     "./index.html",        // explicit fallback
     "./js/data.js",
-    "./js/main.js?v=4.0.5",
-    "./js/main/part-00-core.js?v=4.0.5",
-    "./js/main/part-01-profile-and-setup.js?v=4.0.5",
-    "./js/main/part-02-quiz-engine.js?v=4.0.5",
-    "./js/main/part-03-ui-nav-leaderboard.js?v=4.0.5",
-    "./js/main/part-04-reset-admin.js?v=4.0.5",
-    "./js/main/part-05-shop-bag.js?v=4.0.5",
-    "./js/main/part-06-settings-misc.js?v=4.0.5",
-    "./js/main/part-99-init.js?v=4.0.5",
-    "./js/daily_quests.js?v=4.0.5",
-    "./js/giftday.js?v=4.0.5",
-    "./js/auth.js?v=4.0.5",
+    "./js/main.js?v=4.0.7",
+    "./js/main/part-00-core.js?v=4.0.7",
+    "./js/main/part-01-profile-and-setup.js?v=4.0.7",
+    "./js/main/part-02-quiz-engine.js?v=4.0.7",
+    "./js/main/part-03-ui-nav-leaderboard.js?v=4.0.7",
+    "./js/main/part-04-reset-admin.js?v=4.0.7",
+    "./js/main/part-05-shop-bag.js?v=4.0.7",
+    "./js/main/part-06-settings-misc.js?v=4.0.7",
+    "./js/main/part-07-truefalse.js?v=4.0.7",
+    "./js/main/part-99-init.js?v=4.0.7",
+    "./js/daily_quests.js?v=4.0.7",
+    "./js/giftday.js?v=4.0.7",
+    "./js/auth.js?v=4.0.7",
     
     "./manifest.json",
-    "./style.css?v=4.7",
+    "./style.css?v=4.8",
     "./tailwind-lib.js",
     "./fonts.css",
     "./fonts/Amiri/Amiri-Regular.ttf",

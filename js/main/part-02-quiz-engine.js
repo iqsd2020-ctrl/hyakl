@@ -305,12 +305,21 @@ async function endQuiz() {
     } else if(accuracy >= 80) msg = "أداء ممتاز!";
     else if(accuracy >= 50) msg = "جيد جداً";
     
-    getEl('final-message').textContent = msg;
+    // ✅ نمط الرسالة حسب الفوز/الخسارة (أو نفاد القلوب)
+    const isLossResult = (Number(quizState.lives) || 0) <= 0;
+    try {
+        const sc = getEl('score-card');
+        if (sc) {
+            sc.classList.remove('result-win', 'result-loss');
+            sc.classList.add(isLossResult ? 'result-loss' : 'result-win');
+        }
+    } catch (_) {}
+
+    getEl('final-message').textContent = isLossResult ? 'نفدت القلوب! حاول مرة أخرى 💔' : msg;
 
     // ✅ صوت النتيجة (فوز/خسارة) في واجهة النتيجة فقط
     // - فوز: عندما تنتهي الجولة واللاعب ما زال لديه قلوب
     // - خسارة: عند إنهاء الجولة بعد نفاد القلوب (أو بعد إلغاء الإنعاش)
-    const isLossResult = (Number(quizState.lives) || 0) <= 0;
     if (typeof playSound === 'function') {
         playSound(isLossResult ? 'result_loss' : 'result_win');
     }
@@ -403,13 +412,30 @@ async function endQuiz() {
     const playedIds = (quizState.presentedIds && typeof quizState.presentedIds.size === 'number' && quizState.presentedIds.size > 0)
         ? Array.from(quizState.presentedIds)
         : quizState.questions.filter(q => q && q.id).map(q => q.id);
+
+    const isTrueFalseMode = quizState.mode === 'truefalse';
+
+    // ✅ نظام عدم التكرار:
+    // - الأوضاع العامة: seenQuestions
+    // - صح/خطأ: trueFalseSeen (منفصل حتى لا يلوّث نظام التكرار الرئيسي)
     const oldSeen = Array.isArray(userProfile.seenQuestions) ? userProfile.seenQuestions : [];
-    let updatedSeenQuestions = [...new Set([...oldSeen, ...playedIds])];
-    // ✅ سقف أعلى للصرامة ضد التكرار (مع حماية حجم الوثيقة)
-    const MAX_PROFILE_SEEN = 12000;
-    const KEEP_PROFILE_SEEN = 10000;
-    if (updatedSeenQuestions.length > MAX_PROFILE_SEEN) {
-        updatedSeenQuestions = updatedSeenQuestions.slice(-KEEP_PROFILE_SEEN);
+    let updatedSeenQuestions = oldSeen;
+
+    const oldTfSeen = Array.isArray(userProfile.trueFalseSeen) ? userProfile.trueFalseSeen : [];
+    let updatedTrueFalseSeen = [...new Set([...oldTfSeen, ...playedIds])];
+    const MAX_TF_SEEN = 2000;
+    if (updatedTrueFalseSeen.length > MAX_TF_SEEN) {
+        updatedTrueFalseSeen = updatedTrueFalseSeen.slice(-MAX_TF_SEEN);
+    }
+
+    if (!isTrueFalseMode) {
+        updatedSeenQuestions = [...new Set([...oldSeen, ...playedIds])];
+        // ✅ سقف أعلى للصرامة ضد التكرار (مع حماية حجم الوثيقة)
+        const MAX_PROFILE_SEEN = 12000;
+        const KEEP_PROFILE_SEEN = 10000;
+        if (updatedSeenQuestions.length > MAX_PROFILE_SEEN) {
+            updatedSeenQuestions = updatedSeenQuestions.slice(-KEEP_PROFILE_SEEN);
+        }
     }
 
     let updatedWrongQuestionsBank = Array.isArray(userProfile.wrongQuestionsBank) ? userProfile.wrongQuestionsBank : [];
@@ -436,6 +462,9 @@ async function endQuiz() {
         userProfile.seenQuestions = updatedSeenQuestions;
         try { userProfile.__seenQuestionsSet = new Set(updatedSeenQuestions.map(String)); } catch (_) {}
         userProfile.seenMarathonIds = updatedSeenMarathon;
+        if (quizState.mode === 'truefalse') {
+            userProfile.trueFalseSeen = updatedTrueFalseSeen;
+        }
 
         updateProfileUI();
         scheduleGuestSave(true);
@@ -455,14 +484,20 @@ async function endQuiz() {
 
     const firestoreUpdates = {
         balance: increment(quizState.score),
-        highScore: increment(quizState.score), 
-        stats: newStats, 
+        highScore: increment(quizState.score),
+        stats: newStats,
         weeklyStats: weeklyStats,
         monthlyStats: monthlyStats,
-        wrongQuestionsBank: updatedWrongQuestionsBank, 
-        seenQuestions: updatedSeenQuestions,
+        wrongQuestionsBank: updatedWrongQuestionsBank,
         seenMarathonIds: updatedSeenMarathon
     };
+
+    // ✅ seenQuestions للأوضاع العامة، و trueFalseSeen لوضع صح/خطأ
+    if (quizState.mode === 'truefalse') {
+        firestoreUpdates.trueFalseSeen = updatedTrueFalseSeen;
+    } else {
+        firestoreUpdates.seenQuestions = updatedSeenQuestions;
+    }
 
     try {
         await updateDoc(doc(db, "users", effectiveUserId), firestoreUpdates);
@@ -476,7 +511,10 @@ async function endQuiz() {
         userProfile.seenQuestions = updatedSeenQuestions;
         try { userProfile.__seenQuestionsSet = new Set(updatedSeenQuestions.map(String)); } catch (_) {}
         userProfile.seenMarathonIds = updatedSeenMarathon;
-        
+        if (quizState.mode === 'truefalse') {
+            userProfile.trueFalseSeen = updatedTrueFalseSeen;
+        }
+
         updateProfileUI(); 
 
         setTimeout(async () => {
@@ -495,6 +533,9 @@ async function endQuiz() {
         userProfile.seenQuestions = updatedSeenQuestions;
         try { userProfile.__seenQuestionsSet = new Set(updatedSeenQuestions.map(String)); } catch (_) {}
         userProfile.seenMarathonIds = updatedSeenMarathon;
+        if (quizState.mode === 'truefalse') {
+            userProfile.trueFalseSeen = updatedTrueFalseSeen;
+        }
         updateProfileUI();
     }
 
@@ -509,9 +550,21 @@ function renderReviewArea(){const box=getEl('review-items-container');box.innerH
 function updateHelpersUI() {
     const helperIds = ['helper-fifty-fifty', 'helper-hint', 'helper-skip'];
     const isUsed = quizState.usedHelpers; // هل تم استخدام مساعدة في هذا السؤال؟
+    const isTrueFalse = quizState.mode === 'truefalse'; // هل تم استخدام مساعدة في هذا السؤال؟
 
     helperIds.forEach(id => {
         const btn = getEl(id);
+
+        // ✅ صح/خطأ: تعطيل (50/50) و(تلميح) لأن الخيارات خياران فقط
+        if (isTrueFalse && (id === 'helper-fifty-fifty' || id === 'helper-hint')) {
+            btn.classList.add('hidden');
+            btn.disabled = true;
+            const oldBadge = btn.querySelector('.count-badge');
+            if (oldBadge) oldBadge.remove();
+            return;
+        } else {
+            btn.classList.remove('hidden');
+        }
         
         // إذا تم استخدام مساعدة، نعطل كل الأزرار
         // إذا لم يتم، نفعلها
@@ -546,6 +599,12 @@ function updateHelpersUI() {
 
 async function useHelper(type, cost, actionCallback) {
     if(!quizState.active) return;
+
+    // ✅ صح/خطأ: لا نسمح بـ 50/50 أو التلميح حتى لو تم استدعاؤهما برمجياً
+    if (quizState.mode === 'truefalse' && (type === 'fifty' || type === 'hint')) {
+        toast('هذه المساعدة غير متاحة في (صح/خطأ) لأن الخيارات خياران فقط.', 'info');
+        return;
+    }
 
     if (quizState.usedHelpers) {
         toast("عذراً، يسمح بمساعدة واحدة فقط لكل سؤال! 🚫", "error");
@@ -594,10 +653,18 @@ async function useHelper(type, cost, actionCallback) {
 bind('helper-fifty-fifty', 'click', () => {
     useHelper('fifty', 4, () => {
         const q = quizState.questions[quizState.idx];
-        const opts = document.querySelectorAll('.option-btn');
+        const opts = Array.from(document.querySelectorAll('.option-btn'));
+        if (!opts.length) return;
+
+        const indices = opts.map((_, i) => i).sort(() => Math.random() - 0.5);
+        const removeTarget = Math.min(2, Math.max(0, opts.length - 1));
         let removed = 0;
-        [0,1,2,3].sort(()=>Math.random()-0.5).forEach(i => { 
-            if(i !== q.correctAnswer && removed < 2) { opts[i].classList.add('option-hidden'); removed++; } 
+
+        indices.forEach(i => {
+            if (i !== q.correctAnswer && removed < removeTarget) {
+                opts[i].classList.add('option-hidden');
+                removed++;
+            }
         });
     });
 });
@@ -605,10 +672,24 @@ bind('helper-fifty-fifty', 'click', () => {
 bind('helper-hint', 'click', () => {
     useHelper('hint', 3, () => {
         const q = quizState.questions[quizState.idx];
-        const opts = document.querySelectorAll('.option-btn');
+        const opts = Array.from(document.querySelectorAll('.option-btn'));
+        if (!opts.length) return;
+
+        // Hint: remove one wrong option if possible
+        const removeTarget = opts.length > 2 ? 1 : 0;
+        if (removeTarget === 0) {
+            toast('التلميح غير متاح لهذا السؤال.', 'info');
+            return;
+        }
+
+        const indices = opts.map((_, i) => i).sort(() => Math.random() - 0.5);
         let removed = 0;
-        [0,1,2,3].forEach(i => { 
-            if(i !== q.correctAnswer && removed < 1) { opts[i].classList.add('option-hidden'); removed++; } 
+
+        indices.forEach(i => {
+            if (i !== q.correctAnswer && removed < removeTarget) {
+                opts[i].classList.add('option-hidden');
+                removed++;
+            }
         });
     });
 });

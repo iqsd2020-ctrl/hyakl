@@ -511,8 +511,12 @@ bind('btn-back-leaderboard', 'click', () => {
 
 // 2. ربط زر الحقيبة السفلي
 bind('bottom-bag-btn', 'click', () => {
-    toggleMenu(false);
-    openBag(); // دالة فتح الحقيبة تعمل بشكل مباشر ولا تحتاج تعديل
+    try {
+        toggleMenu(false);
+        openBag(); // دالة فتح الحقيبة تعمل بشكل مباشر ولا تحتاج تعديل
+    } catch (e) {
+        try { openBag(); } catch (_) {}
+    }
 });
 
 // (تم نقل تعريف دوال المهام اليومية وربطها بـ window إلى ملف js/daily_quests.js)

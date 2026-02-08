@@ -9,61 +9,112 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#064E3B">
     <script src="tailwind-lib.js"></script>      
-    <link rel="stylesheet" href="style.css?v=4.7">
+    <link rel="stylesheet" href="style.css?v=4.8">
+
+    <style>
+        /* === UI additions (home redesign) === */
+        .glass-effect {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+        }
+        /* Hide scrollbars (mobile) */
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        /* Splash loader */
+        .liquid-loader {
+            width: 220px;
+            height: 10px;
+            background: rgba(51, 65, 85, 0.85);
+            border-radius: 20px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .liquid-bar {
+            height: 100%;
+            width: 100%;
+            background: linear-gradient(90deg, #fbbf24, #f59e0b);
+            border-radius: 20px;
+            position: relative;
+            box-shadow: 0 0 10px rgba(251, 191, 36, 0.65);
+            transform-origin: left;
+            animation: liquidProgress 2.2s ease-in-out infinite;
+        }
+        .liquid-bar::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image: linear-gradient(
+                -45deg,
+                rgba(255, 255, 255, .22) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255, 255, 255, .22) 50%,
+                rgba(255, 255, 255, .22) 75%,
+                transparent 75%,
+                transparent
+            );
+            z-index: 1;
+            background-size: 20px 20px;
+            animation: moveLiquid 2s linear infinite;
+        }
+        @keyframes liquidProgress {
+            0%   { transform: scaleX(0.12); opacity: .85; }
+            50%  { transform: scaleX(0.92); opacity: 1; }
+            100% { transform: scaleX(0.12); opacity: .85; }
+        }
+        @keyframes moveLiquid {
+            0% { background-position: 0 0; }
+            100% { background-position: 20px 20px; }
+        }
+        .fade-in { animation: fadeIn 0.6s ease-in-out forwards; opacity: 0; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
+    </style>
+
 </head>
 <body class="flex flex-col items-center justify-center w-full h-full overflow-hidden bg-[#0f172a] fixed inset-0">
 <div id="bottom-nav" class="hidden">
-    <div class="nav-glass-body">
-        
-        <button id="menu-btn" class="nav-item-btn">
-            <span class="material-symbols-rounded">widgets</span>
-            <span class="label">القائمة</span>
-        </button>
-
-        <button id="bottom-leaderboard-btn" class="nav-item-btn">
-            <span class="material-symbols-rounded">workspace_premium</span>
-            <span class="label">المتصدرون</span>
-        </button>
-
-        <div class="nav-spacer"></div>
-
-        <div class="nav-floating-btn-container">
-            <div id="user-profile-btn" class="nav-floating-btn" title="حسابي">
-                <img id="user-avatar-img" class="hidden" src="" alt="Avatar">
-                <span id="user-avatar-icon" class="material-symbols-rounded text-3xl">person</span>
-            </div>
-        </div>
-
-        <button id="bottom-bag-btn" class="nav-item-btn">
-            <span class="material-symbols-rounded">local_mall</span>
-            <span class="label">حقيبتي</span>
-        </button>
-
-        <div class="relative h-full flex-1">
-            <button id="notif-btn" class="nav-item-btn w-full">
-                <span class="material-symbols-rounded">notifications_active</span>
-                <span class="label">تنبيهات</span>
-                <span id="notif-badge" class="nav-badge hidden"></span>
+    <nav class="fixed bottom-0 left-0 w-full glass-effect z-50 pb-safe pointer-events-auto">
+        <div class="flex justify-around items-center p-2 pointer-events-auto">
+            <button id="menu-btn" type="button" class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-200 transition-colors active:scale-[0.98]">
+                <span class="material-symbols-rounded text-2xl">menu</span>
+                <span class="text-[10px] font-heading">القائمة</span>
             </button>
-            
-            <div id="notif-dropdown" class="hidden absolute bottom-[85px] left-0 w-64 bg-slate-900 border border-amber-500/30 rounded-xl shadow-2xl overflow-hidden origin-bottom-left transition-all duration-200">
-                <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800">
-                    <span class="text-amber-400 font-bold text-xs font-heading"> الإشعارات</span>
-                    <button id="clear-notif-btn" class="text-[10px] text-red-400 hover:text-red-300">مسح الكل</button>
-                </div>
-                <div id="notif-list" class="max-h-64 overflow-y-auto bg-slate-900/95"></div>
-            </div>
+
+            <button type="button" id="bottom-notifications-btn" class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-200 transition-colors active:scale-[0.98]" onclick="try{event&&event.stopPropagation&&event.stopPropagation();event&&event.preventDefault&&event.preventDefault();const d=document.getElementById('notif-dropdown');if(d){d.classList.toggle('hidden');}}catch(_){} return false;">
+                <span class="material-symbols-rounded text-2xl">notifications</span>
+                <span class="text-[10px] font-heading">الإشعارات</span>
+            </button>
+
+            <button type="button" id="bottom-badges-btn" class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-200 transition-colors active:scale-[0.98]" onclick="try{document.getElementById('nav-badges')?.click()}catch(_){}">
+                <span class="material-symbols-rounded text-2xl">military_tech</span>
+                <span class="text-[10px] font-heading">الأوسمة</span>
+            </button>
+
+            <button type="button" id="bottom-bag-btn" class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-200 transition-colors active:scale-[0.98]" onclick="try{window.openBag&&window.openBag()}catch(_){}">
+                <span class="material-symbols-rounded text-2xl">shopping_bag</span>
+                <span class="text-[10px] font-heading">الحقيبة</span>
+            </button>
+
+            <button type="button" id="bottom-leaderboard-btn" class="flex flex-col items-center gap-1 p-2 text-slate-400 hover:text-slate-200 transition-colors active:scale-[0.98]">
+                <span class="material-symbols-rounded text-2xl">leaderboard</span>
+                <span class="text-[10px] font-heading">الأوائل</span>
+            </button>
         </div>
-
-    </div>
+    </nav>
 </div>
-
-
-
-
-    <div id="side-menu-overlay"></div>
-<div id="side-menu" class="!bg-[#0f172a] !border-l-2 !border-amber-500/30 flex flex-col h-full">
-    <div class="p-6 bg-slate-900 border-b border-amber-500/20 text-center relative shrink-0">
+<div id="notif-dropdown" class="hidden fixed bottom-24 right-3 w-64 bg-slate-900 border border-amber-500/30 rounded-xl shadow-2xl overflow-hidden origin-top-left transition-all duration-200 z-[10040]">
+    <div class="p-3 border-b border-slate-700 flex justify-between items-center bg-slate-800">
+        <span class="text-amber-400 font-bold text-xs font-heading">الإشعارات</span>
+        <button id="clear-notif-btn" class="text-[10px] text-red-400 hover:text-red-300">مسح الكل</button>
+    </div>
+    <div id="notif-list" class="max-h-64 overflow-y-auto bg-slate-900/95"></div>
+</div>
+<div id="side-menu-overlay"></div>
+<div id="side-menu" class="side-menu flex flex-col h-full">
+    <div class="side-menu-header p-6 text-center relative shrink-0">
         <div class="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-amber-500 to-transparent"></div>
         <h2 class="text-2xl font-bold text-amber-500 font-heading drop-shadow-md">القائمة</h2>
         <div class="flex justify-center mt-2">
@@ -71,38 +122,38 @@
         </div>
     </div>
 
-    <div class="flex-grow overflow-y-auto p-4 space-y-2 custom-scrollbar">
-        <div class="menu-item !bg-slate-800/50 !border-amber-500/10 hover:!bg-amber-500 hover:!text-slate-900" id="nav-achievements">
+    <div class="side-menu-body flex-grow overflow-y-auto p-4 space-y-2 custom-scrollbar">
+        <div class="menu-item" id="nav-achievements">
             <span class="material-symbols-rounded">draw</span> انجازاتي
         </div>
-        <div class="menu-item !bg-slate-800/50 !border-amber-500/10 hover:!bg-amber-500 hover:!text-slate-900" id="nav-badges">
+        <div class="menu-item" id="nav-badges">
             <span class="material-symbols-rounded">military_tech</span> الأوسمة
         </div>
         
-        <div class="menu-item !bg-slate-800/50 !border-amber-500/10 hover:!bg-amber-500 hover:!text-slate-900" id="nav-favs">
+        <div class="menu-item" id="nav-favs">
             <span class="material-symbols-rounded">favorite</span> المفضلة
         </div>
         
-        <div class="menu-item !bg-slate-800/50 !border-amber-500/10 hover:!bg-amber-500 hover:!text-slate-900" id="nav-mistakes">
+        <div class="menu-item" id="nav-mistakes">
             <span class="material-symbols-rounded">history_edu</span> الأخطاء السابقة
         </div>
 
-        <div class="my-4 border-t border-dashed border-slate-700"></div>
+        <div class="side-menu-separator my-4"></div>
 
-        <div class="menu-item !bg-slate-800/50 !border-slate-700 hover:!border-amber-500" id="nav-settings">
+        <div class="menu-item" id="nav-settings">
             <span class="material-symbols-rounded">settings</span> الإعدادات
         </div>
         
-        <div class="menu-item !bg-slate-800/50 !border-slate-700 hover:!border-amber-500" id="nav-about">
+        <div class="menu-item" id="nav-about">
             <span class="material-symbols-rounded">info</span> عن التطبيق
         </div>
         
-        <div class="menu-item !bg-slate-800/50 !border-slate-700 hover:!border-amber-500" id="nav-contact">
+        <div class="menu-item" id="nav-contact">
             <span class="material-symbols-rounded">mail</span> راسل المطور
         </div>
     </div>
 
-    <div class="p-4 bg-slate-900 border-t border-amber-500/20 mt-auto shrink-0">
+    <div class="side-menu-footer p-4 mt-auto shrink-0">
         <button id="logout-btn-menu" class="w-full py-2 border border-red-500 text-red-400 rounded-lg hover:bg-red-500 hover:text-white transition font-bold flex justify-center items-center gap-2">
             <span class="material-symbols-rounded">logout</span> خروج
         </button>
@@ -111,31 +162,32 @@
 
     <div id="main-container" class="w-full max-w-2xl h-full p-4 relative z-10 flex flex-col justify-center">
 
-        <div id="auth-loading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-900 transition-opacity duration-700">
-    
-    <div class="absolute inset-0 opacity-10 pointer-events-none bg-icon-blur"></div>
-
-    <div class="relative mb-8 z-10">
-        <div class="absolute inset-0 bg-amber-500/20 blur-xl rounded-full animate-pulse"></div>
-        <img src="Icon.png" 
-             class="w-32 h-32 object-contain drop-shadow-2xl relative animate-[bounce_2s_infinite]" 
-             alt="App Logo">
+        <div id="auth-loading" class="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-[#0f172a] transition-opacity duration-700">
+    <div class="mb-8 relative">
+        <div class="w-28 h-28 rounded-full bg-slate-800 border-2 border-amber-400 flex items-center justify-center shadow-lg">
+            <span class="material-symbols-rounded text-6xl text-amber-400">mosque</span>
+        </div>
     </div>
 
-    <h1 class="text-3xl font-bold text-white font-heading mb-2 tracking-wide drop-shadow-lg relative z-10">
+    <h1 class="text-3xl font-bold text-white font-heading mb-2 tracking-wide drop-shadow-lg">
         هياكل النور
     </h1>
-    
-    <p class="text-amber-400/80 text-sm font-bold mb-6 relative z-10 animate-pulse">
-        اللّهم صَلِّ على محمد وآل محمد
 
-    <div class="w-48 h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700 relative z-10 shadow-lg">
-        <div class="h-full bg-gradient-to-r from-amber-600 via-yellow-400 to-amber-600 w-full origin-left animate-[loadingBar_1.5s_infinite_ease-in-out]"></div>
+    <!-- مهم: هذا الـ p يُستخدم داخل JS لتحديث النص -->
+    <p class="text-amber-300/90 text-sm font-bold mb-8">
+        جاري تجهيز المصادر...
+    </p>
+
+    <div class="liquid-loader">
+        <div class="liquid-bar"></div>
     </div>
+
+    <p class="mt-4 text-amber-400 font-heading text-xs opacity-80">
+        رحلة في رحاب المعرفة...
+    </p>
 </div>
 
-
-        <div id="login-area" class="hidden fade-in">
+<div id="login-area" class="hidden fade-in">
             <div class="auth-shell">
                 <!-- Ambient background (auth-only) -->
                 <div class="auth-ambient" aria-hidden="true">
@@ -239,143 +291,254 @@
             </div>
         </div>
 
-        <div id="welcome-area" class="hidden fade-in absolute inset-x-0 top-0 bottom-0 overflow-y-auto pb-28 px-6">
-                        
-            <div id="monasbat-banner" class="w-full mb-5 rounded-2xl border border-amber-500/20 bg-slate-900/55 backdrop-blur-md px-4 py-3 shadow-lg shadow-black/30">
-  <div id="monasbat-hijri-date" class="text-[12px] text-amber-200/80 font-bold mb-1 font-heading">...</div>
-  <div id="monasbat-text" class="text-sm text-slate-100 leading-relaxed whitespace-pre-line">...</div>
-</div>
+        <div id="welcome-area" class="hidden fade-in absolute inset-x-0 top-0 bottom-0 overflow-y-auto pb-0 px-6">                        
+            <div class="flex flex-col min-h-full w-full pb-24 fade-in">
+                <!-- Header -->
+                <header class="flex justify-between items-center pt-6 pb-2">
+                    <div class="w-10"></div>
 
-<div class="text-center mb-8">
-    <img src="Icon.png" class="w-24 h-24 mx-auto mb-3 drop-shadow-2xl animate-pulse-slow" alt="App Logo">
-    <h1 class="text-3xl font-bold text-amber-400 font-heading tracking-wide drop-shadow-md">هياكل النور</h1>
-</div>
-            
-            <button id="review-mistakes-btn" class="hidden w-full bg-orange-900/30 hover:bg-orange-900/50 border border-orange-500/30 text-orange-200 font-bold py-2 px-4 rounded-lg mb-4 flex items-center justify-center gap-2 transition">
-                <span class="material-symbols-rounded">history_edu</span> <span id="review-mistakes-text">مراجعة أخطائي</span>
-            </button>
+                    <div class="flex items-center gap-2">
+                        <button id="notif-btn" class="relative p-2 rounded-full bg-slate-800 border border-slate-700 text-slate-200 active:scale-95 transition hidden">
+                            <span class="material-symbols-rounded">notifications</span>
+                            <span id="notif-badge" class="absolute -top-1 -left-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-600 text-white text-[10px] font-bold hidden items-center justify-center border-2 border-[#0f172a]"></span>
+                        </button>
 
-            <div class="space-y-4">
-                <div class="relative">
-                    <button id="btn-category-trigger" class="custom-select-trigger">
-                        <span id="txt-category-display">تصفح المكتبة</span>
-                        <span class="material-symbols-rounded trigger-icon">expand_more</span>
+                        <button id="user-profile-btn" class="w-10 h-10 rounded-full bg-slate-800 border border-amber-500/50 text-amber-300 flex items-center justify-center active:scale-95 transition hidden" title="حسابي">
+                            <span class="material-symbols-rounded">person</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Banner (Monasbat) -->
+                <div id="monasbat-banner" class="w-full mt-4 mb-5 rounded-2xl border border-amber-500/20 bg-slate-900/55 backdrop-blur-md px-4 py-3 shadow-lg shadow-black/30">
+                    <div id="monasbat-hijri-date" class="text-[12px] text-amber-200/80 font-bold mb-1 font-heading">...</div>
+                    <div id="monasbat-text" class="text-sm text-slate-100 leading-relaxed whitespace-pre-line">...</div>
+                </div>
+
+                <!-- Profile card -->
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 mb-4 border border-slate-700 shadow-lg relative overflow-hidden" onclick="try{document.getElementById('user-profile-btn')?.click()}catch(_){}">
+                    <div class="absolute -left-10 -top-10 w-40 h-40 bg-amber-400 opacity-5 rounded-full blur-3xl pointer-events-none"></div>
+
+                    <button id="guest-auth-btn-profile-card" type="button" class="hidden absolute top-4 left-4 w-10 h-10 rounded-full bg-slate-800 border border-amber-500/40 text-amber-300 flex items-center justify-center active:scale-95 transition" title="تسجيل الدخول / التسجيل" aria-label="تسجيل الدخول أو التسجيل" onclick="try{event.stopPropagation();}catch(_){} try{window.openGuestAuth&&window.openGuestAuth()}catch(_){}">
+                        <span class="material-symbols-rounded text-xl">login</span>
                     </button>
-                    <input type="hidden" id="category-select" value="">
+
+                    <div class="flex items-center gap-4 relative z-10">
+                        <div class="w-16 h-16 rounded-full bg-slate-700 border-2 border-amber-400 flex items-center justify-center overflow-hidden">
+                            <img src="Icon.png" alt="Logo" class="w-full h-full object-contain p-2">
+                        </div>
+
+                        <div class="flex-1">
+                            <h2 id="username-display" class="text-xl font-heading text-white">زائر</h2>
+                            <div class="flex items-center gap-2 mt-1">
+                                <span class="material-symbols-rounded text-amber-400 text-lg">monetization_on</span>
+                                <span id="header-score" class="text-amber-300 font-bold text-lg font-heading">0</span>
+                                <span class="text-xs text-slate-400 mr-1">نقطة</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 bg-slate-950/40 rounded-lg p-3 border border-white/5">
+                        <div class="flex items-center justify-between">
+                            <div class="text-xs text-slate-400">نظام التقدم والمستويات</div>
+                            <span class="material-symbols-rounded text-amber-400">auto_awesome</span>
+                        </div>
+
+                        <div class="mt-3 flex items-center gap-3">
+                            <div class="flex-1">
+                                <div class="glass-tube-container h-10 w-full border border-amber-500/20">
+                                    <div id="player-level-progress-fill" class="liquid-fill liquid-gold"></div>
+                                    <div class="player-level-tube-text absolute inset-0 flex items-center justify-center z-[3] pointer-events-none text-[11px] sm:text-xs font-bold text-slate-100">
+                                        <span id="player-level-progress-text">%٠ • المتبقي: ٥٠</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="shrink-0 bg-slate-900/50 border border-amber-500/25 rounded-xl px-3 py-2 text-center">
+                                <div class="text-[10px] text-slate-400 mb-1">المستوى</div>
+                                <div id="player-level-number" class="text-amber-300 font-bold text-xl font-heading leading-none">١</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="relative">
-                    <button id="btn-topic-trigger" class="custom-select-trigger" disabled>
-                        <span id="txt-topic-display">اختر الموضوع</span>
-                        <span class="material-symbols-rounded trigger-icon">expand_more</span>
+
+                <!-- Settings selections -->
+                <div class="space-y-3 mb-6">
+
+                    <!-- Category -->
+                    <div class="relative">
+                        <button id="btn-category-trigger" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 flex justify-between items-center active:scale-[0.99] transition-transform">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-emerald-900/30 flex items-center justify-center text-emerald-300">
+                                    <span class="material-symbols-rounded">category</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400">القسم</div>
+                                    <div id="txt-category-display" class="text-white font-heading text-lg">تصفح المكتبة</div>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded text-slate-500">expand_more</span>
+                        </button>
+                        <input type="hidden" id="category-select" value="">
+                    </div>
+
+                    <!-- Topic -->
+                    <div class="relative">
+                        <button id="btn-topic-trigger" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 flex justify-between items-center active:scale-[0.99] transition-transform" disabled>
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-blue-900/30 flex items-center justify-center text-blue-300">
+                                    <span class="material-symbols-rounded">menu_book</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400">الموضوع</div>
+                                    <div id="txt-topic-display" class="text-white font-heading text-lg">اختر الموضوع</div>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded text-slate-500">expand_more</span>
+                        </button>
+                        <input type="hidden" id="topic-select" value="">
+                    </div>
+
+                    <!-- Count -->
+                    <div class="relative">
+                        <button id="btn-count-trigger" class="w-full bg-slate-800 border border-slate-700 rounded-xl p-4 flex justify-between items-center active:scale-[0.99] transition-transform">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-lg bg-purple-900/30 flex items-center justify-center text-purple-300">
+                                    <span class="material-symbols-rounded">format_list_numbered</span>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-400">عدد الأسئلة</div>
+                                    <div id="txt-count-display" class="text-white font-heading text-lg">١٠ أسئلة</div>
+                                </div>
+                            </div>
+                            <span class="material-symbols-rounded text-slate-500">expand_more</span>
+                        </button>
+                        <input type="hidden" id="ai-question-count" value="10">
+                    </div>
+                </div>
+
+                <!-- Start -->
+                <button id="ai-generate-btn" class="w-full bg-gradient-to-r from-amber-400 to-amber-600 rounded-xl p-4 shadow-lg active:scale-[0.99] transition-all relative overflow-hidden group mb-4 btn-gold-action">
+                    <div class="absolute inset-0 bg-white/15 group-hover:bg-white/25 transition-colors"></div>
+                    <div class="relative z-10 flex items-center justify-center gap-2">
+                        <span class="material-symbols-rounded text-[#0f172a] text-3xl">play_circle</span>
+                        <span class="text-[#0f172a] font-heading font-bold text-2xl">ابدأ التحدي</span>
+                    </div>
+                </button>
+
+                <!-- Review mistakes -->
+                <button id="review-mistakes-btn" class="hidden w-full bg-slate-800 border border-red-900/50 rounded-xl p-3 flex justify-center items-center gap-2 mb-4 active:scale-[0.99] transition">
+                    <span class="material-symbols-rounded text-red-400">history_edu</span>
+                    <span id="review-mistakes-text" class="text-red-100 font-amiri">مراجعة أخطائي</span>
+                </button>
+
+                <!-- Daily quests (kept) -->
+                <div id="daily-quest-container" class="quest-container w-full flex justify-center hidden mt-1 mb-5">
+                    <button id="btn-open-quests" class="group relative w-full overflow-hidden rounded-2xl p-[1px] transition-all hover:scale-[1.01] active:scale-95 shadow-lg">
+                        <div class="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-slate-600 to-amber-500/20 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                        <div class="relative flex items-center justify-between rounded-2xl bg-slate-900/90 backdrop-blur-md p-3 border border-white/5">
+                            <div class="flex items-center gap-4">
+                                <div class="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-900/40 to-slate-800 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.15)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow">
+                                    <span class="material-symbols-rounded text-2xl text-amber-400 group-hover:scale-110 transition-transform">military_tech</span>
+                                </div>
+                                <div class="text-right z-10">
+                                    <h4 class="font-heading text-sm font-bold text-white group-hover:text-amber-400 transition-colors tracking-wide">المهام اليومية</h4>
+                                    <p class="text-[10px] text-slate-400 font-medium">جوائز وتحديات جديدة</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2 pl-1">
+                                <span id="quest-notification-badge" class="hidden bg-red-600 text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] rounded-full flex items-center justify-center border border-slate-900 shadow-sm z-10">!</span>
+                                <div class="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 group-hover:bg-amber-500 group-hover:border-amber-400 group-hover:text-slate-900 transition-all duration-300">
+                                    <span class="material-symbols-rounded text-lg text-slate-400 group-hover:text-slate-900 rotate-180 group-hover:-translate-x-0.5 transition-transform">arrow_right_alt</span>
+                                </div>
+                            </div>
+                        </div>
                     </button>
-                    <input type="hidden" id="topic-select" value="">
-                </div>
-                            <div class="flex gap-2">
-                                <div class="relative w-1/2">
-                    <button id="btn-count-trigger" class="custom-select-trigger h-full justify-center gap-2">
-                        <span id="txt-count-display">١٠ أسئلة</span>
-                        <span class="material-symbols-rounded trigger-icon text-sm">expand_more</span>
-                    </button>
-                    <input type="hidden" id="ai-question-count" value="10">
                 </div>
 
-                
-                
-                <button id="btn-marathon-start" class="w-1/2 relative overflow-hidden rounded-xl shadow-[0_4px_0_#9ca3af] transition-transform active:translate-y-[2px] active:shadow-none group btn-marathon-start">
-    
-    <div class="absolute inset-0 opacity-20 pointer-events-none shine-overlay"></div>
-    
-    <div class="flex items-center justify-center gap-2 h-full w-full py-3">
-<span class="text-slate-900 font-bold text-lg font-heading group-hover:text-slate-900 transition-colors">أكمل النور</span>
-        <div class="relative flex items-center justify-center">
-            <span class="absolute inset-0 bg-orange-500 blur-md opacity-0 group-hover:opacity-60 transition-opacity duration-300"></span>
-            <span class="material-symbols-rounded text-orange-400 group-hover:text-orange-300 transition-colors animate-pulse relative z-10">local_fire_department</span> 
+                <!-- Marathon -->
+                <div class="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-xl p-4 border border-indigo-500/30 relative overflow-hidden mb-2">
+                    <div class="flex justify-between items-center relative z-10">
+                        <div>
+                            <h3 class="font-heading text-white text-lg">أكمل النور</h3>
+                            <p class="text-slate-300 text-xs mt-1">تحدي الماراثون اليومي</p>
+                        </div>
+                        <button id="btn-marathon-start" class="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg font-heading text-sm active:scale-95 transition">
+                            دخول
+                        </button>
+                    </div>
+                </div>
+
+                <!-- True/False -->
+                <div id="tf-card" class="bg-gradient-to-r from-slate-900/50 to-slate-800/50 rounded-xl p-4 border border-amber-500/20 relative overflow-hidden mb-2">
+                    <div class="flex justify-between items-center relative z-10">
+                        <div>
+                            <h3 class="font-heading text-white text-lg">صح أو خطأ</h3>
+                            <p class="text-slate-300 text-xs mt-1">جولة سريعة بواجهـة التحدي</p>
+                        </div>
+                        <button id="btn-tf-start" class="bg-amber-600 hover:bg-amber-500 text-slate-900 px-4 py-2 rounded-lg font-heading text-sm active:scale-95 transition">
+                            ابدأ
+                        </button>
+                    </div>
+
+                    <!-- TF progress (home card) -->
+                    <div class="relative z-10 mt-3">
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 h-2 rounded-full bg-slate-900/60 border border-amber-500/20 overflow-hidden shadow shadow-black/20">
+                                <div id="tf-home-progress" class="h-full w-0 bg-gradient-to-l from-amber-400/90 to-amber-600/70 transition-all duration-300"></div>
+                            </div>
+                            <span id="tf-home-progress-text" class="text-[10px] text-slate-200 font-bold font-heading min-w-[64px] text-left">0/0</span>
+                        </div>
+                        <div class="mt-2 flex items-center justify-between text-[10px]">
+                            <span id="tf-home-remaining" class="text-amber-400/90 font-bold hidden">متبقي 0</span>
+                            <span id="tf-home-badge" class="hidden px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">مكتمل</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    </div>
-</button>
 
-
-            </div>
-<div class="w-full mt-4 flex flex-col gap-3">
-<div class="flex gap-3 w-full">
-    <button 
-        id="ai-generate-btn" 
-        class="group relative w-full overflow-hidden rounded-full border border-amber-600/50 bg-gradient-to-b from-amber-400 via-amber-600 to-amber-800 py-3 shadow-lg shadow-amber-900/40 transition-all duration-300 hover:scale-[1.02] hover:shadow-amber-600/30 active:scale-95 btn-gold-action flex justify-center items-center gap-3">
-        
-        <div class="absolute inset-0 opacity-10 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
-
-        <div class="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/30 to-transparent transition-transform duration-700 ease-in-out group-hover:translate-x-full"></div>
-
-        <div class="absolute inset-x-4 top-0 h-[1px] bg-gradient-to-r from-transparent via-yellow-200 to-transparent opacity-60"></div>
-        
-        <span class="material-symbols-rounded relative z-10 text-amber-100 transition-transform duration-300 group-hover:rotate-12">
-            menu_book
-        </span>
-
-        <span class="relative z-10 font-heading text-lg font-bold tracking-wider text-white drop-shadow-md transition-all group-hover:text-yellow-50">
-            ابدأ التحدي
-        </span> 
-    </button>
-</div>
-
-
-    <div id="daily-quest-container" class="quest-container w-full flex justify-center hidden mt-4">
-    <button id="btn-open-quests" class="group relative w-full overflow-hidden rounded-2xl p-[1px] transition-all hover:scale-[1.01] active:scale-95 shadow-lg">
-        
-        <div class="absolute inset-0 bg-gradient-to-r from-amber-500/20 via-slate-600 to-amber-500/20 opacity-50 group-hover:opacity-100 transition-opacity"></div>
-        
-        <div class="relative flex items-center justify-between rounded-2xl bg-slate-900/90 backdrop-blur-md p-3 border border-white/5">
-            
-            <div class="absolute inset-0 -translate-x-full group-hover:animate-[shimmerSweep_1.5s_infinite] bg-gradient-to-r from-transparent via-white/5 to-transparent skew-x-12 pointer-events-none"></div>
-
-            <div class="flex items-center gap-4">
-                <div class="relative flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-900/40 to-slate-800 border border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.15)] group-hover:shadow-[0_0_20px_rgba(245,158,11,0.3)] transition-shadow">
-                    <span class="material-symbols-rounded text-2xl text-amber-400 group-hover:scale-110 transition-transform">military_tech</span>
-                </div>
-                
-                <div class="text-right z-10">
-                    <h4 class="font-heading text-sm font-bold text-white group-hover:text-amber-400 transition-colors tracking-wide">المهام اليومية</h4>
-                    <p class="text-[10px] text-slate-400 font-medium flex items-center gap-1.5">
-                        <span class="relative flex h-2 w-2">
-                          <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                        جوائز وتحديات جديدة
-                    </p>
-                </div>
-            </div>
-
-            <div class="flex items-center gap-2 pl-1">
-                
-                <span id="quest-notification-badge" class="hidden bg-red-600 text-white text-[10px] font-bold px-1.5 min-w-[18px] h-[18px] rounded-full flex items-center justify-center border border-slate-900 shadow-sm z-10">
-                   !
-                </span>
-
-                <div class="h-8 w-8 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700 group-hover:bg-amber-500 group-hover:border-amber-400 group-hover:text-slate-900 transition-all duration-300">
-                    <span class="material-symbols-rounded text-lg text-slate-400 group-hover:text-slate-900 rotate-180 group-hover:-translate-x-0.5 transition-transform">arrow_right_alt</span>
-                </div>
-            </div>
-        </div>
-    </button>
-</div>
-
-
- </div>
-            </div>
-        </div>
-        <div id="achievements-view" class="hidden w-full h-full flex flex-col fade-in relative">
+        <!-- صفحة صح أو خطأ -->
+        <div id="truefalse-view" class="hidden w-full h-full flex flex-col fade-in relative">
             <div class="flex justify-between items-center py-4 border-b border-amber-500/20 mb-4 px-4">
-                <button id="btn-back-achievements" class="text-slate-400 hover:text-white transition transform hover:-translate-x-1">
+                <button id="btn-back-truefalse" class="text-slate-400 hover:text-white transition transform hover:-translate-x-1">
                     <span class="material-symbols-rounded text-2xl">arrow_forward</span>
                 </button>
-                <h2 class="text-xl font-bold text-amber-400 font-heading">إنجازاتي</h2>
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-white font-heading">صح أو خطأ</h2>
+                    <p class="text-[10px] text-amber-500/80 font-bold">سلسلة عشوائية</p>
+                </div>
                 <div class="w-6"></div>
             </div>
-            <div id="achievements-content" class="flex-1 overflow-y-auto custom-scrollbar">
-                <div id="achievements-grid" class="achievements-grid"></div>
+
+            <div class="flex-1 overflow-y-auto px-4 pb-24">
+                <div class="mx-auto max-w-[520px] space-y-4">
+
+                    <!-- Progress Tube -->
+                    <div class="relative h-5 rounded-full bg-slate-900/60 border border-amber-500/25 overflow-hidden shadow shadow-black/30">
+                        <div id="tf-progress-fill" class="absolute inset-y-0 right-0 w-0 bg-gradient-to-l from-amber-400/90 to-amber-600/70 transition-all duration-300"></div>
+                        <div class="absolute inset-0 flex items-center justify-center">
+                            <span id="tf-progress-text" class="text-[11px] font-bold text-white font-heading drop-shadow">0/0</span>
+                        </div>
+                    </div>
+
+                    <!-- Question Card -->
+                    <div class="bg-slate-900/55 backdrop-blur-md rounded-2xl border border-amber-500/20 p-5 shadow-lg shadow-black/30">
+                        <p id="tf-question" class="text-white text-2xl leading-relaxed font-bold">جاري تحميل الأسئلة...</p>
+                        <p id="tf-status" class="text-[10px] text-amber-400 mt-2 hidden"></p>
+                    </div>
+
+                    <!-- Answer Buttons (outside the card) -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="tf-btn-true" class="bg-emerald-600 hover:bg-emerald-500 text-white py-3 rounded-2xl font-heading text-sm border border-white/10 shadow-lg shadow-black/30 active:scale-95 transition">صح</button>
+                        <button id="tf-btn-false" class="bg-rose-600 hover:bg-rose-500 text-white py-3 rounded-2xl font-heading text-sm border border-white/10 shadow-lg shadow-black/30 active:scale-95 transition">خطأ</button>
+                    </div>
+
+                </div>
             </div>
         </div>
-
-        <!-- صفحة لوحة المتصدرين الجديدة -->
+        <!-- صفحة لوحة المتصدرين -->
         <div id="leaderboard-view" class="hidden w-full h-full flex flex-col fade-in relative">
             <div class="flex justify-between items-center py-4 border-b border-amber-500/20 mb-4 px-4">
                 <button id="btn-back-leaderboard" class="text-slate-400 hover:text-white transition transform hover:-translate-x-1">
@@ -387,27 +550,53 @@
                 </div>
                 <div class="w-6"></div>
             </div>
-            
+
             <div id="leaderboard-content" class="flex-1 overflow-y-auto px-4 pb-24">
-                <!-- عداد تصفير القائمة -->
                 <div id="leaderboard-reset-timer" class="hidden mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-center animate-fade-in">
                     <p class="text-[10px] font-bold text-amber-500 uppercase tracking-widest mb-2">سيتم تصفير لوحة المتصدرين بعد</p>
                     <div id="reset-timer-display" class="text-2xl font-bold text-white font-mono tracking-widest">0:00:00:00</div>
                 </div>
 
                 <div id="leaderboard-loading" class="text-center py-10">
-                    <div class="w-12 h-12 border-4 border-amber-500/30 border-t-amber-500 rounded-full animate-spin mx-auto mb-3"></div>
-                    <p class="text-amber-500 text-sm font-bold animate-pulse">جاري جلب الأبطال...</p>
+                    <div id="leaderboard-progress-label" class="text-amber-400 font-black text-lg font-mono mb-2">0%</div>
+                    <div class="w-full max-w-sm mx-auto h-3 bg-amber-500/10 border border-amber-500/20 rounded-full overflow-hidden">
+                        <div id="leaderboard-progress-bar" class="h-full bg-amber-500 rounded-full transition-all duration-200" style="width:0%"></div>
+                    </div>
+                    <p id="leaderboard-loading-text" class="text-amber-500 text-sm font-bold animate-pulse mt-3">يتم عرض المتصدرين ....</p>
                 </div>
+
                 <div id="leaderboard-list" class="space-y-3 hidden"></div>
-                
+
                 <div class="mt-8 p-4 bg-slate-900/50 rounded-2xl border border-white/5 text-center">
                     <p class="text-[10px] text-slate-500">يتم تصفير لوحة المتصدرين تلقائياً في بداية كل شهر ميلادي</p>
                 </div>
             </div>
         </div>
-        
-        <div id="quiz-proper" class="hidden w-full h-full flex flex-col justify-center py-2 relative">
+
+        <!-- صفحة الإنجازات -->
+        <div id="achievements-view" class="hidden w-full h-full flex flex-col fade-in relative">
+            <div class="flex justify-between items-center py-4 border-b border-amber-500/20 mb-4 px-4">
+                <button id="btn-back-achievements" class="text-slate-400 hover:text-white transition transform hover:-translate-x-1">
+                    <span class="material-symbols-rounded text-2xl">arrow_forward</span>
+                </button>
+                <div class="text-center">
+                    <h2 class="text-xl font-bold text-white font-heading">إنجازاتي</h2>
+                    <p class="text-[10px] text-amber-500/80 font-bold">معرض التقدّم والجوائز</p>
+                </div>
+                <div class="w-6"></div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-2 pb-24">
+                <div class="mx-auto max-w-[520px]">
+                    <div class="mb-4 mx-3 p-4 rounded-2xl bg-slate-900/50 border border-white/5 text-slate-300 text-[11px] leading-relaxed">
+                        كل بطاقة تُظهر نسبة تقدمك. عند إكمال إنجاز، يظهر زر تحميل الصورة عالية الدقة.
+                    </div>
+                </div>
+                <div id="achievements-grid" class="achievements-grid"></div>
+            </div>
+        </div>
+
+<div id="quiz-proper" class="hidden w-full h-full flex flex-col justify-center py-2 relative">
 
     <div id="quiz-topic-display" class="text-center text-amber-300/90 text-sm font-heading mb-2 tracking-wide bg-white/5 py-1 rounded-lg mx-auto w-fit px-4 border border-white/5"></div>
     <div class="flex justify-between items-center text-sm text-slate-400 font-heading mb-2">
@@ -429,10 +618,10 @@
         </div>
         <span id="live-score-text" class="text-amber-400 font-bold text-lg transition-all">0</span>
     </div>
-    <div class="flex justify-center gap-1 mb-4 opacity-50"><div id="progress-dots" class="flex gap-1"></div></div>
-    <div class="flex items-center justify-center text-center mb-6 p-6 relative shrink-0 min-h-[160px] w-full max-w-xl mx-auto transition-all duration-300">
+    <div class="flex justify-center mb-4"><div id="progress-dots" class="w-full max-w-xl mx-auto"></div></div>
+    <div class="flex items-center justify-center text-center mb-6 p-6 relative shrink-0 min-h-[160px] w-full max-w-xl mx-auto transition-all duration-300 question-card-modern">
     
-    <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl"></div>
+    <div class="absolute inset-0 bg-slate-900/80 backdrop-blur-md rounded-2xl border border-white/5 shadow-2xl question-surface-modern"></div>
 
     <div class="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-amber-500/60 rounded-tr-xl"></div>
     <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-amber-500/60 rounded-tl-xl"></div>
@@ -596,12 +785,12 @@
     
     <div id="player-profile-modal" class="modal-overlay">
         <div class="modal-box border border-amber-500/30">
-            <button class="close-modal absolute top-4 left-4 text-slate-400 hover:text-white z-50 p-2 text-xl font-bold transition hover:scale-110">✕</button>
+            <button type="button" class="close-modal absolute top-4 left-4 text-slate-400 hover:text-white z-50 p-2 text-xl font-bold transition hover:scale-110">✕</button>
 
             <div class="text-center mb-6 relative">
                  <div class="w-24 h-24 rounded-full mx-auto border-4 border-amber-500 shadow-lg overflow-hidden relative bg-slate-800 flex items-center justify-center">
                      <img id="popup-player-img" src="" class="w-full h-full object-cover hidden" alt="">
-                     <span id="popup-player-icon" class="material-symbols-rounded text-6xl text-slate-500">account_circle</span>
+                     <span id="popup-player-icon" class="material-symbols-rounded text-6xl text-slate-500">login</span>
                  </div>
                  <h3 id="popup-player-name" class="text-2xl font-bold text-white mt-4 font-heading">...</h3>
                  <div class="flex justify-center gap-2 mt-2">
@@ -622,6 +811,33 @@
                 <button class="close-modal text-slate-400 hover:text-white">✕</button>
             </div>
             <div id="fav-list" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1"></div>
+        </div>
+    </div>
+
+    <!-- عرض تفاصيل عنصر من المفضلة (سؤال/إجابة/معلومة إثرائية) -->
+    <div id="fav-detail-modal" class="modal-overlay">
+        <div class="modal-box">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-amber-400 font-heading">تفاصيل المفضلة</h3>
+                <button id="fav-detail-close" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <p class="text-[11px] text-slate-400 mb-1 font-bold">السؤال</p>
+                    <p id="fav-detail-question" class="text-slate-100 text-sm leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+
+                <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <p class="text-[11px] text-slate-400 mb-1 font-bold">الإجابة</p>
+                    <p id="fav-detail-answer" class="text-emerald-300 text-sm font-bold leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+
+                <div class="p-3 bg-slate-800/50 rounded-xl border border-slate-700">
+                    <p class="text-[11px] text-slate-400 mb-1 font-bold">المعلومة الإثرائية</p>
+                    <p id="fav-detail-enrichment" class="text-amber-200/90 text-sm leading-relaxed whitespace-pre-wrap"></p>
+                </div>
+            </div>
         </div>
     </div>
     <div id="settings-modal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm transition-opacity duration-300" dir="rtl">
@@ -862,7 +1078,12 @@
                     <span class="material-symbols-rounded text-amber-500 text-2xl drop-shadow">id_card</span>
                     <h3 class="text-xl font-bold text-white font-heading">بطاقة اللاعب</h3>
                 </div>
-                <button class="close-modal w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-red-500/20 hover:border-red-500/50 border border-slate-700 transition flex items-center justify-center">✕</button>
+                <div class="flex items-center gap-2">
+                    <button id="guest-auth-btn-user-modal" type="button" class="hidden w-8 h-8 rounded-full bg-slate-800 text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 border border-amber-500/30 transition flex items-center justify-center" title="تسجيل الدخول / التسجيل" aria-label="تسجيل الدخول أو التسجيل" onclick="try{window.openGuestAuth&&window.openGuestAuth()}catch(_){}">
+                        <span class="material-symbols-rounded text-lg">login</span>
+                    </button>
+                    <button id="btn-back-bag" class="close-modal w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 border border-slate-700 transition flex items-center justify-center" aria-label="رجوع"><span class="material-symbols-rounded text-xl">arrow_forward</span></button>
+                </div>
             </div>
         </div>
 
@@ -967,21 +1188,21 @@
 </div>
 
     
-    <div id="selection-modal" class="modal-overlay">
-        <div class="modal-box border border-amber-500/50" style="max-height: 70vh;">
-            <div class="flex justify-between items-center mb-4 border-b border-slate-700 pb-2">
+    <div id="selection-modal" class="modal-overlay selection-modal-overlay">
+        <div class="modal-box selection-modal-box">
+            <div class="selection-modal-header flex justify-between items-center">
                 <h3 id="selection-title" class="text-xl font-bold text-amber-400 font-heading">اختر القائمة</h3>
-                <button class="close-modal text-slate-400 hover:text-white">✕</button>
+                <button class="close-modal selection-modal-close" aria-label="إغلاق">✕</button>
             </div>
-            <div id="selection-list-container" class="flex flex-col"></div>
+            <div id="selection-list-container" class="selection-modal-list flex flex-col"></div>
         </div>
     </div>
     
     
-<div id="bag-modal" class="modal-overlay backdrop-blur-sm">
-    <div class="modal-box !bg-[#0f172a] !border-2 !border-amber-500/30 !rounded-3xl !p-0 overflow-hidden shadow-[0_0_60px_rgba(245,158,11,0.15)] max-w-lg w-full flex flex-col h-[85vh]">
+<div id="bag-modal" class="hidden bag-page">
+    <div class="modal-box !bg-[#0f172a] !border-2 !border-amber-500/30 !rounded-3xl !p-0 overflow-hidden shadow-[0_0_60px_rgba(245,158,11,0.15)] max-w-lg w-full flex flex-col h-[85vh] bag-page-box">
         
-        <div class="relative bg-slate-900 p-5 text-center border-b border-amber-500/20 shrink-0">
+        <div class="relative bg-slate-900 p-5 text-center border-b border-amber-500/20 shrink-0 bag-page-header">
             <div class="flex justify-between items-center relative z-10">
                 <div class="flex items-center gap-2">
                     <span class="material-symbols-rounded text-amber-500 text-2xl drop-shadow-[0_0_10px_rgba(245,158,11,0.5)]">local_mall</span>
@@ -991,9 +1212,9 @@
             </div>
         </div>
         
-        <div class="flex-1 overflow-y-auto custom-scrollbar p-5">
+        <div class="flex-1 overflow-y-auto custom-scrollbar p-5 bag-page-body">
             
-            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-900/40 to-slate-800 border border-amber-500/30 p-4 mb-6 group">
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-amber-900/40 to-slate-800 border border-amber-500/30 p-4 mb-6 group bag-wallet-card">
                 <div class="absolute -right-6 -bottom-6 w-24 h-24 bg-amber-500/10 rounded-full blur-2xl group-hover:bg-amber-500/20 transition-colors"></div>
                 <div class="relative z-10 flex justify-between items-center">
                     <div>
@@ -1009,8 +1230,8 @@
                 </div>
             </div>
 
-            <div class="flex p-1 bg-slate-900 rounded-xl mb-6 border border-slate-700 relative">
-                <button id="tab-inventory" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 relative z-10 bg-amber-500 text-slate-900 shadow-lg">
+            <div class="flex p-1 bg-slate-900 rounded-xl mb-6 border border-slate-700 relative bag-tabs">
+                <button id="tab-inventory" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 relative z-10 bg-amber-500 text-black shadow-lg">
                     مقتنياتي
                 </button>
                 <button id="tab-shop" class="flex-1 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 relative z-10 text-slate-400 hover:text-white">
@@ -1150,10 +1371,62 @@
     </div>
 </div>
 
+<div id="truefalse-rules-modal" class="modal-overlay">
+    <div class="modal-box border-2 border-amber-500/50 bg-[#0f172a]">
+        <h3 class="text-2xl font-bold text-white mb-4 font-heading text-center">تحدي صح أو خطأ</h3>
+
+        <div class="space-y-3 p-4 bg-slate-800/60 rounded-lg border border-slate-700 mb-5">
+            <p class="text-slate-300 text-sm flex items-start gap-2">
+                <span class="material-symbols-rounded text-amber-400 mt-1 shrink-0">favorite</span>
+                نفس منطق القلوب: الخطأ يخصم قلباً، وتنتهي الجولة عند نفاد القلوب.
+            </p>
+            <p class="text-slate-300 text-sm flex items-start gap-2">
+                <span class="material-symbols-rounded text-emerald-400 mt-1 shrink-0">workspace_premium</span>
+                واجهة اللعب والنتيجة مطابقة للتحديات الأخرى (فوز/خسارة + مراجعة الأخطاء).
+            </p>
+            <p class="text-slate-300 text-sm flex items-start gap-2">
+                <span class="material-symbols-rounded text-sky-400 mt-1 shrink-0">lock_clock</span>
+                لن تتكرر الأسئلة التي تم عرضها لك حتى تُكمل الختم (إلا في وضع المراجعة).
+            </p>
+            <p class="text-xs text-amber-500 font-bold mt-4 border-t border-slate-700 pt-3">
+                ملاحظة: تم تعطيل (50/50) والتلميح هنا لأن الخيارات خياران فقط.
+            </p>
+        </div>
+
+        <div class="bg-slate-800/50 p-4 rounded-xl border border-slate-700 mb-5">
+            <div class="flex justify-between items-center text-xs text-slate-300 mb-2">
+                <span class="font-bold">تقدّم الختم</span>
+                <span id="tf-modal-progress-text" class="font-bold text-white">0/0</span>
+            </div>
+            <div class="h-2 rounded-full bg-slate-900/60 border border-amber-500/20 overflow-hidden">
+                <div id="tf-modal-progress-fill" class="h-full w-0 bg-gradient-to-l from-amber-400/90 to-amber-600/70 transition-all duration-300"></div>
+            </div>
+            <div class="flex justify-between items-center mt-2 text-[10px] hidden">
+                <span id="tf-modal-remaining" class="text-amber-400/90 font-bold">متبقي 0</span>
+                <button id="tf-reset-progress" class="text-slate-400 hover:text-white underline decoration-dotted">إعادة ضبط الختم</button>
+            </div>
+        </div>
+
+        <div class="mb-6 hidden">
+            <p class="text-xs text-slate-400 mb-2 font-bold">اختر طول الجولة</p>
+            <div class="grid grid-cols-3 gap-2">
+                <button class="tf-round-btn bg-slate-800 text-white py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 hover:bg-slate-700 transition font-heading text-sm" data-count="10">10</button>
+                <button class="tf-round-btn bg-slate-800 text-white py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 hover:bg-slate-700 transition font-heading text-sm" data-count="15">15</button>
+                <button class="tf-round-btn bg-slate-800 text-white py-2 rounded-xl border border-slate-700 hover:border-amber-500/40 hover:bg-slate-700 transition font-heading text-sm" data-count="all">كامل</button>
+            </div>
+            <p id="tf-modal-note" class="text-[10px] text-slate-400 mt-2">الجولة «كامل» تلعب كل الأسئلة المتبقية حتى نهاية الختم.</p>
+        </div>
+
+        <button id="btn-tf-confirm" class="btn-gold-action w-full py-3">بدء الجولة</button>
+        <button class="close-modal w-full text-slate-500 hover:text-white mt-3 text-sm transition">إلغاء</button>
+    </div>
+</div>
+
+
   
 <script type="module" src="js/monasbat_banner.js?v=1.0.0"></script>
     <!-- تحديث إصدار الجافاسكربت لتفادي مشاكل التخزين المؤقت -->
-    <script type="module" src="js/main.js?v=4.0.5"></script>
+    <script type="module" src="js/main.js?v=4.0.7"></script>
             <div id="confirm-modal" class="modal-overlay z-[90]">
         <div class="modal-box border-2 border-amber-500/50 text-center bg-[#0f172a]">
             <div class="mb-4 flex justify-center">
@@ -1357,7 +1630,7 @@
 </div>
 
 <template id="option-template">
-    <button class="option-btn group relative overflow-hidden w-full p-3 mb-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 hover:border-amber-500/50 transition-all duration-200 flex items-center gap-4 text-right">
+    <button class="option-btn option-btn-modern group relative overflow-hidden w-full p-3 mb-2 rounded-xl border border-slate-700 bg-slate-800/80 hover:bg-slate-700 hover:border-amber-500/50 transition-all duration-200 flex items-center gap-4 text-right">
         
         <span class="option-char flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 border border-slate-700 text-slate-400 font-bold group-hover:text-amber-400 group-hover:border-amber-500/50 transition-colors shrink-0 font-mono shadow-inner">
             1
@@ -1370,6 +1643,15 @@
         <div class="progress-fill absolute inset-0 bg-amber-500/10 translate-x-full transition-transform duration-300 pointer-events-none"></div>
         
         <span class="status-icon material-symbols-rounded text-2xl hidden relative z-10 ml-2">check_circle</span>
+    </button>
+</template>
+
+<template id="tf-option-template">
+    <button class="option-btn tf-option-btn group relative overflow-hidden w-full rounded-2xl border border-slate-700 bg-slate-900/60 hover:bg-slate-800/90 transition-all duration-200 flex flex-col items-center justify-center py-6">
+        <span class="tf-option-icon material-symbols-rounded text-5xl mb-2 opacity-90">check_circle</span>
+        <span class="tf-option-text font-heading text-2xl font-bold">صح</span>
+        <div class="progress-fill absolute inset-0 bg-amber-500/10 translate-x-full transition-transform duration-300 pointer-events-none"></div>
+        <span class="status-icon material-symbols-rounded text-3xl hidden absolute top-3 left-3">check_circle</span>
     </button>
 </template>
 
@@ -1491,10 +1773,10 @@
         </div>
     </div>
 
-</body>
 <div id="offline-banner" class="hidden fixed top-4 right-4 z-[200] w-10 h-10 rounded-full bg-red-900/90 text-white border border-red-500 backdrop-blur-sm shadow-lg pointer-events-none transition-transform duration-300 transform -translate-y-20">
     <span class="material-symbols-rounded text-[22px] leading-none">wifi_off</span>
 </div>
 
+</body>
 
 </html>

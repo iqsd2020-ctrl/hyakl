@@ -152,7 +152,83 @@ function updateProfileUI() {
         }
     }
 
+    // --- تحديث نظام التقدم والمستويات (بطاقة اللاعب) ---
+    try { updatePlayerLevelProgressUI(); } catch (_) {}
+
+    const guestAuthBtnProfile = getEl('guest-auth-btn-profile-card');
+    const guestAuthBtnModal = getEl('guest-auth-btn-user-modal');
+    if (typeof isGuestMode === 'function' && isGuestMode()) {
+        if (guestAuthBtnProfile) guestAuthBtnProfile.classList.remove('hidden');
+        if (guestAuthBtnModal) guestAuthBtnModal.classList.remove('hidden');
+    } else {
+        if (guestAuthBtnProfile) guestAuthBtnProfile.classList.add('hidden');
+        if (guestAuthBtnModal) guestAuthBtnModal.classList.add('hidden');
+    }
+
 }
+
+
+// ============================
+// نظام التقدم والمستويات (بطاقة اللاعب)
+// يعتمد حصرياً على عدد الإجابات الصحيحة الكلي
+// ============================
+function computePlayerLevelProgress(totalCorrect) {
+    const safeTotal = Math.max(0, Number(totalCorrect) || 0);
+    let level = 1;
+    let target = 50;
+    let inLevel = safeTotal;
+
+    // مستوى 1: 50، مستوى 2: 100، مستوى 3: 200 ... (يتضاعف الهدف)
+    while (inLevel >= target) {
+        inLevel -= target;
+        level += 1;
+        target *= 2;
+
+        // حارس أمان (تجنب أي حالة شاذة)
+        if (level > 10000) break;
+    }
+
+    const remaining = Math.max(0, target - inLevel);
+    const percent = (target > 0) ? Math.min(100, Math.floor((inLevel / target) * 100)) : 0;
+
+    return { level, target, current: inLevel, remaining, percent, totalCorrect: safeTotal };
+}
+
+function updatePlayerLevelProgressUI() {
+    const fillEl = document.getElementById('player-level-progress-fill');
+    const txtEl  = document.getElementById('player-level-progress-text');
+    const lvlEl  = document.getElementById('player-level-number');
+
+    if (!fillEl && !txtEl && !lvlEl) return;
+
+    const totalCorrect = (userProfile && userProfile.stats) ? userProfile.stats.totalCorrect : 0;
+    const p = computePlayerLevelProgress(totalCorrect);
+
+    const fmt = (n) => (typeof formatNumberAr === 'function') ? formatNumberAr(n) : String(n);
+
+    if (lvlEl) lvlEl.textContent = fmt(p.level);
+    if (fillEl) fillEl.style.width = `${p.percent}%`;
+    if (txtEl) txtEl.textContent = `%${fmt(p.percent)} • المتبقي: ${fmt(p.remaining)}`;
+}
+
+
+window.openGuestAuth = function() {
+    try {
+        if (typeof isGuestMode === 'function' && !isGuestMode()) return;
+
+        try { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); } catch (_) {}
+        try { toggleMenu(false); } catch (_) {}
+
+        try { hide('welcome-area'); } catch (_) {}
+        try { hide('bottom-nav'); } catch (_) {}
+
+        try { show('login-area'); } catch (_) {}
+        try { show('login-view'); } catch (_) {}
+        try { hide('register-view'); } catch (_) {}
+        try { hide('auth-loading'); } catch (_) {}
+    } catch (_) {}
+};
+
 // ✅ إيقاف تأثير الوميض الأحمر (Low Health Vignette) عند الخروج من اللعب
 function clearLowHealthVignette() {
     const vignette = getEl('low-health-vignette');
@@ -190,10 +266,10 @@ clearLowHealthVignette();
 
     setTimeout(checkWhatsNew, 1500); 
     checkMarathonStatus();
-     
+    checkAndShowDailyReward();
 
-    
-    checkAndShowDailyReward(); 
+    // ✅ تحديث بطاقة (صح/خطأ) في الرئيسية
+    try { if (typeof updateTrueFalseCardStats === 'function') updateTrueFalseCardStats(); } catch (_) {}
 }
 
 
@@ -797,11 +873,40 @@ function renderLives() {
     
     // رسم القلوب
     el.innerHTML = `
-        <div class="flex items-center gap-1 transition-all duration-300">
-            <span class="material-symbols-rounded text-red-500 text-2xl drop-shadow-sm ${quizState.lives <= 1 ? 'animate-pulse' : ''}">favorite</span>
-            <span class="text-red-400 font-bold text-xl font-heading pt-1" dir="ltr">x${formatNumberAr(quizState.lives)}</span>
+        <div class="flex items-center gap-2 transition-all duration-300">
+            <div class="glass-tube-container w-8 h-3 border border-white/10 ${quizState.lives <= 1 ? 'animate-pulse' : ''}">
+                <div id="lives-tube-fill" class="liquid-fill"></div>
+            </div>
+            <span class="text-slate-200 font-bold text-xs font-heading pt-0.5" dir="ltr">${formatNumberAr(quizState.lives)}</span>
         </div>
     `;
+
+    const fill = getEl('lives-tube-fill');
+    if (fill) {
+        const max = Math.max(1, Number(quizState.maxLives || 3));
+        const cur = Math.max(0, Number(quizState.lives || 0));
+        const ratio = Math.max(0, Math.min(1, cur / max));
+        const pct = Math.round(ratio * 100);
+
+        fill.style.width = `${pct}%`;
+
+        // أخضر (ممتلئ) -> أحمر (فارغ)
+        const green = [16, 185, 129]; // #10b981
+        const red   = [239, 68, 68];  // #ef4444
+        const t = 1 - ratio;
+
+        const lerp = (a, b, x) => Math.round(a + (b - a) * x);
+
+        const r = lerp(green[0], red[0], t);
+        const g = lerp(green[1], red[1], t);
+        const b = lerp(green[2], red[2], t);
+
+        const base = `rgb(${r}, ${g}, ${b})`;
+        const dark = `rgb(${Math.round(r * 0.55)}, ${Math.round(g * 0.55)}, ${Math.round(b * 0.55)})`;
+
+        fill.style.background = `linear-gradient(90deg, ${base}, ${dark})`;
+        fill.style.color = base;
+    }
 
     // --- منطق نبض الخطر (Red Vignette) ---
     const vignette = getEl('low-health-vignette');
@@ -940,7 +1045,7 @@ function startQuiz() {
     
     const extraLives = (userProfile.inventory && userProfile.inventory.lives) ? userProfile.inventory.lives : 0;
     quizState.lives = 3 + extraLives;
-
+    quizState.maxLives = quizState.lives;
     helpers = { fifty: false, hint: false, skip: false };
     quizState.usedHelpers = false; 
     quizState.hasUsedHelperInSession = false; 
@@ -1034,12 +1139,52 @@ window.addEventListener('resize', () => {
     const box = document.getElementById('options-container');
     if (box) scheduleOptionTextFit(box);
 });
+function __setQuizProgressTube(fillEl, solvedCount, totalCount) {
+    if (!fillEl) return;
+
+    const total = Math.max(1, Number(totalCount) || 1);
+    const solved = Math.max(0, Number(solvedCount) || 0);
+    const pct = Math.max(0, Math.min(100, Math.round((solved / total) * 100)));
+
+    fillEl.style.width = `${pct}%`;
+
+    // تدرّج سلس: أحمر -> أخضر (0%..60%) ثم أخضر -> ذهبي (60%..100%)
+    const red   = [239, 68, 68];   // #ef4444
+    const green = [16, 185, 129];  // #10b981
+    const gold  = [245, 158, 11];  // #f59e0b
+
+    const lerp = (a, b, t) => Math.round(a + (b - a) * t);
+
+    let a = red, b = green, t = 0;
+    if (pct <= 60) {
+        t = pct / 60;
+        a = red; b = green;
+    } else {
+        t = (pct - 60) / 40;
+        a = green; b = gold;
+    }
+
+    const r = lerp(a[0], b[0], t);
+    const g = lerp(a[1], b[1], t);
+    const bb = lerp(a[2], b[2], t);
+
+    const base = `rgb(${r}, ${g}, ${bb})`;
+    const dark = `rgb(${Math.round(r * 0.55)}, ${Math.round(g * 0.55)}, ${Math.round(bb * 0.55)})`;
+
+    fillEl.style.background = `linear-gradient(90deg, ${base}, ${dark})`;
+    fillEl.style.color = base;
+
+    if (!fillEl.dataset.tubeReady) {
+        fillEl.style.transition = 'width 1.5s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.35s ease, color 0.35s ease';
+        fillEl.dataset.tubeReady = '1';
+    }
+}
 function renderQuestion() {
     quizState.processingAnswer = false;
-    quizState.usedHelpers = false; 
-    updateHelpersUI(); 
+    quizState.usedHelpers = false;
+    updateHelpersUI();
 
-    quizState.active = true; 
+    quizState.active = true;
     const q = quizState.questions[quizState.idx];
 
     // ✅ تعليم السؤال كـ "تم عرضه" فوراً (لمنع تكراره حتى لو انسحب/أعاد التحميل)
@@ -1048,82 +1193,103 @@ function renderQuestion() {
             if (!quizState.presentedIds) quizState.presentedIds = new Set();
             const sid = String(q.id);
             quizState.presentedIds.add(sid);
-            markQuestionAsSeen(sid);
+
+            // --- نظام عدم التكرار حسب الوضع ---
+            if (quizState.mode === 'truefalse' && typeof markTrueFalseAsSeen === 'function') {
+                markTrueFalseAsSeen(sid);
+            } else {
+                markQuestionAsSeen(sid);
+            }
         }
     } catch (_) {}
-    
+
     getEl('quiz-topic-display').textContent = q.topic || quizState.contextTopic;
 
     // كتابة نص السؤال
     typeWriter('question-text', q.question);
-    
 
+    // عدّاد/تقدم
     if (quizState.mode === 'marathon') {
-        getEl('question-counter-text').textContent = `${quizState.idx+1}`;
-        const dots = getEl('progress-dots'); 
-        dots.innerHTML = '<span class="text-xs text-slate-500 font-mono tracking-widest">🪙 (أكمل النور)</span>';
+        getEl('question-counter-text').textContent = `${quizState.idx + 1}`;
+        const dots = getEl('progress-dots');
+
+        if (dots && !document.getElementById('quiz-progress-fill')) {
+            dots.innerHTML = `<div class="glass-tube-container h-2 w-full border border-amber-500/20"><div id="quiz-progress-fill" class="liquid-fill"></div></div>`;
+        }
+
+        const fill = getEl('quiz-progress-fill');
+        __setQuizProgressTube(fill, quizState.idx, quizState.questions.length);
     } else {
-       getEl('question-counter-text').textContent = `${formatNumberAr(quizState.idx+1)}/${formatNumberAr(quizState.questions.length)}`;
+        getEl('question-counter-text').textContent = `${formatNumberAr(quizState.idx + 1)}/${formatNumberAr(quizState.questions.length)}`;
 
         const dots = getEl('progress-dots');
-dots.innerHTML = '';
 
-const groupSize = 10;
-const start = Math.floor(quizState.idx / groupSize) * groupSize;
-const end = Math.min(start + groupSize, quizState.questions.length);
+        if (dots && !document.getElementById('quiz-progress-fill')) {
+            dots.innerHTML = `<div class="glass-tube-container h-2 w-full border border-amber-500/20"><div id="quiz-progress-fill" class="liquid-fill"></div></div>`;
+        }
 
-for (let i = start; i < end; i++) {
-    let cls = "w-2 h-2 rounded-full bg-slate-700";
-
-    if (i < quizState.idx) {
-        cls = "w-2 h-2 rounded-full bg-amber-500";
-    } else if (i === quizState.idx) {
-        cls = "w-2 h-2 rounded-full bg-white scale-125";
-    }
-
-    dots.innerHTML += `<div class="${cls}"></div>`;
-}
+        const fill = getEl('quiz-progress-fill');
+        __setQuizProgressTube(fill, quizState.idx, quizState.questions.length);
     }
 
     getEl('live-score-text').textContent = formatNumberAr(quizState.score);
 
-     const box = getEl('options-container');
-    box.innerHTML = ''; 
+    const box = getEl('options-container');
+    box.innerHTML = '';
 
     // ============================================================
-    // 🔥 الحل النهائي: تنسيق الشبكة عبر الجافاسكربت مباشرة 🔥
-    // (يضمن العمل 100% بتطبيق التنسيق على العناصر مباشرة)
+    // ✅ تنسيق الخيارات حسب الوضع
+    // - marathon : شبكة
+    // - truefalse: شبكة مخصصة (زرّان كبيران)
+    // - default  : قائمة
     // ============================================================
+    box.classList.remove('options-grid-mode', 'options-truefalse-mode', 'space-y-1', 'space-y-2', 'space-y-3');
+
+    const isTrueFalse = quizState.mode === 'truefalse';
+
     if (quizState.mode === 'marathon') {
-        // ✅ شبكة الماراثون عبر CSS (بدون inline)
         box.classList.add('options-grid-mode');
-        box.classList.remove('space-y-1', 'space-y-2', 'space-y-3');
+    } else if (isTrueFalse) {
+        box.classList.add('options-truefalse-mode');
     } else {
-        // العودة للوضع الطبيعي (القائمة)
-        box.classList.remove('options-grid-mode');
         box.classList.add('space-y-1');
     }
-    // 1. جلب القالب من HTML
-    const template = document.getElementById('option-template');
 
+    // 1) جلب القالب
+    const template = document.getElementById(isTrueFalse ? 'tf-option-template' : 'option-template');
+
+    // 2) بناء الأزرار
     q.options.forEach((o, i) => {
         const clone = template.content.cloneNode(true);
         const btn = clone.querySelector('button');
-        const charEl = btn.querySelector('.option-char');
-        const textEl = btn.querySelector('.option-text');
-        charEl.textContent = formatNumberAr(i + 1);
-        textEl.textContent = o;
+
+        if (isTrueFalse) {
+            const iconEl = btn.querySelector('.tf-option-icon');
+            const textEl = btn.querySelector('.tf-option-text');
+            const isTrue = (String(o).trim() === 'صح') || (i === 0);
+
+            if (iconEl) iconEl.textContent = isTrue ? 'check_circle' : 'cancel';
+            if (textEl) textEl.textContent = o;
+
+            btn.classList.add(isTrue ? 'tf-true' : 'tf-false');
+        } else {
+            const charEl = btn.querySelector('.option-char');
+            const textEl = btn.querySelector('.option-text');
+            if (charEl) charEl.textContent = formatNumberAr(i + 1);
+            if (textEl) textEl.textContent = o;
+        }
+
         btn.onclick = () => selectAnswer(i, btn);
         btn.classList.add('grid-pop');
         btn.classList.add(`grid-pop-delay-${Math.min(i, 9)}`);
         box.appendChild(clone);
     });
 
-    // ✅ Auto-fit long option text to prevent clipping
+    // ✅ Auto-fit long option text to prevent clipping (works for normal template)
     scheduleOptionTextFit(box);
 
     getEl('feedback-text').textContent = '';
-    quizState.startTime = Date.now(); 
+    quizState.startTime = Date.now();
 }
 
 function nextQuestion() {

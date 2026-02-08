@@ -74,19 +74,15 @@ onAuthStateChanged(auth, async (user) => {
             return;
         }
 
-        // لا يوجد مستخدم مسجّل: إذا كانت جلسة الضيف مفعّلة سابقاً، ادخل كضيف.
-        let guestActive = false;
-        try { guestActive = localStorage.getItem(GUEST_SESSION_KEY) === '1'; } catch (_) {}
-
+        // لا يوجد مستخدم مسجّل: ادخل مباشرة بوضع الضيف (لا نعرض شاشة تسجيل الدخول)
         hide('auth-loading');
-        if (guestActive) {
-            enterGuestMode({ silent: true });
-            return;
+        try { enterGuestMode({ silent: true }); } catch (_) {
+            // fallback آمن في حال تعذر تهيئة وضع الضيف لأي سبب
+            try { hide('login-area'); } catch (_) {}
+            try { show('bottom-nav'); } catch (_) {}
+            try { navToHome(); } catch (_) {}
         }
-
-        show('login-area');
-        show('login-view');
-        hide('bottom-nav');
+        return;
     }
 });
 
