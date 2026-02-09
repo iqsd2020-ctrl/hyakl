@@ -4,7 +4,7 @@ import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, arrayUnion, increment, enableIndexedDbPersistence, deleteField } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { getDatabase, ref, set, onDisconnect, onValue, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 import { topicsData, badgesData, badgesMap, sectionFilesMap } from './data.js';
-import { bindDailyQuestsDeps, initDailyQuests as dq_initDailyQuests, updateQuestProgress as dq_updateQuestProgress } from './daily_quests.js?v=4.0.7';
+import { bindDailyQuestsDeps, initDailyQuests as dq_initDailyQuests, updateQuestProgress as dq_updateQuestProgress } from './daily_quests.js?v=7.0.15';
 import { renderAchievementsView } from './achievements.js';
 import { initMessaging } from './messaging.js';
 import { framesData, getFrameById, getFrameName } from './frames.js';
@@ -22,7 +22,7 @@ import {
     updatePasswordIfEmailAccount,
     updateUsername,
     signOutUser
-} from './auth.js?v=4.0.7';
+} from './auth.js?v=7.0.15';
 
 
 const firebaseConfig = {
@@ -120,15 +120,15 @@ enableIndexedDbPersistence(db).catch((err) => {
 
 // __MAIN_SPLIT_LOADER__ : load split parts after bootstrap completes (strict order)
 const __MAIN_PARTS__ = [
-  './main/part-00-core.js?v=4.0.7',
-  './main/part-01-profile-and-setup.js?v=4.0.7',
-  './main/part-02-quiz-engine.js?v=4.0.7',
-  './main/part-03-ui-nav-leaderboard.js?v=4.0.7',
-  './main/part-04-reset-admin.js?v=4.0.7',
-  './main/part-05-shop-bag.js?v=4.0.7',
-  './main/part-06-settings-misc.js?v=4.0.7',
-  './main/part-07-truefalse.js?v=4.0.7',
-  './main/part-99-init.js?v=4.0.7'
+  './main/part-00-core.js?v=7.0.15',
+  './main/part-01-profile-and-setup.js?v=7.0.15',
+  './main/part-02-quiz-engine.js?v=7.0.15',
+  './main/part-03-ui-nav-leaderboard.js?v=7.0.15',
+  './main/part-04-reset-admin.js?v=7.0.15',
+  './main/part-05-shop-bag.js?v=7.0.15',
+  './main/part-06-settings-misc.js?v=7.0.15',
+  './main/part-07-truefalse.js?v=7.0.15',
+  './main/part-99-init.js?v=7.0.15'
 ];
 
 function __loadClassicScriptPart(relUrl) {

@@ -207,9 +207,31 @@ async function loadMonasbatJson() {
 }
 
 async function renderMonasbatBanner() {
+  const bannerEl = document.getElementById("monasbat-banner");
   const dateEl = document.getElementById("monasbat-hijri-date");
   const textEl = document.getElementById("monasbat-text");
   if (!dateEl || !textEl) return;
+
+  const labelEl = bannerEl
+    ? Array.from(bannerEl.querySelectorAll("div")).find(el => (el.textContent || "").trim() === "المناسبات")
+    : null;
+
+  const iconSpan = bannerEl ? bannerEl.querySelector("span.material-symbols-rounded") : null;
+  const iconBoxEl = iconSpan ? iconSpan.closest("div") : null;
+
+  function setFolded(folded) {
+    if (folded) {
+      textEl.style.display = "none";
+      if (labelEl) labelEl.style.display = "none";
+      if (iconBoxEl) iconBoxEl.style.display = "none";
+      if (bannerEl) bannerEl.style.cursor = "pointer";
+    } else {
+      textEl.style.display = "";
+      if (labelEl) labelEl.style.display = "";
+      if (iconBoxEl) iconBoxEl.style.display = "";
+      if (bannerEl) bannerEl.style.cursor = "";
+    }
+  }
 
   const today = new Date();
   const hijriToday = getHijriParts(today);
@@ -231,6 +253,7 @@ async function renderMonasbatBanner() {
       const todayKey = `${hijriToday.dayNum}-${hijriToday.monthName}`;
       const todayItems = index.get(todayKey);
       if (todayItems && todayItems.length) {
+        setFolded(false);
         textEl.textContent = composeTodayText(hijriToday, todayItems);
         return;
       }
@@ -258,8 +281,19 @@ async function renderMonasbatBanner() {
     } else {
       textEl.textContent = "المناسبة القادمة: غير متاحة";
     }
+
+    let isFolded = true;
+    setFolded(true);
+
+    if (bannerEl) {
+      bannerEl.addEventListener("click", () => {
+        isFolded = !isFolded;
+        setFolded(isFolded);
+      });
+    }
   } catch (_) {
     // في حال فشل تحميل الملف لأي سبب
+    setFolded(false);
     textEl.textContent = "المناسبة القادمة: غير متاحة";
   }
 }

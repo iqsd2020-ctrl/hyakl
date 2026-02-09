@@ -1,28 +1,28 @@
 const CONFIG = {
   // Change this when you deploy a new build (forces new cache names)
-  version: "4.0.15",
+  version: "7.0.15",
 
   // Local assets only (no external URLs here)
   staticAssets: [
     "./",                 // root (usually serves index.html)
     "./index.html",        // explicit fallback
     "./js/data.js",
-    "./js/main.js?v=4.0.7",
-    "./js/main/part-00-core.js?v=4.0.7",
-    "./js/main/part-01-profile-and-setup.js?v=4.0.7",
-    "./js/main/part-02-quiz-engine.js?v=4.0.7",
-    "./js/main/part-03-ui-nav-leaderboard.js?v=4.0.7",
-    "./js/main/part-04-reset-admin.js?v=4.0.7",
-    "./js/main/part-05-shop-bag.js?v=4.0.7",
-    "./js/main/part-06-settings-misc.js?v=4.0.7",
-    "./js/main/part-07-truefalse.js?v=4.0.7",
-    "./js/main/part-99-init.js?v=4.0.7",
-    "./js/daily_quests.js?v=4.0.7",
-    "./js/giftday.js?v=4.0.7",
-    "./js/auth.js?v=4.0.7",
+    "./js/main.js?v=7.0.15",
+    "./js/main/part-00-core.js?v=7.0.15",
+    "./js/main/part-01-profile-and-setup.js?v=7.0.15",
+    "./js/main/part-02-quiz-engine.js?v=7.0.15",
+    "./js/main/part-03-ui-nav-leaderboard.js?v=7.0.15",
+    "./js/main/part-04-reset-admin.js?v=7.0.15",
+    "./js/main/part-05-shop-bag.js?v=7.0.15",
+    "./js/main/part-06-settings-misc.js?v=7.0.15",
+    "./js/main/part-07-truefalse.js?v=7.0.15",
+    "./js/main/part-99-init.js?v=7.0.15",
+    "./js/daily_quests.js?v=7.0.15",
+    "./js/giftday.js?v=7.0.15",
+    "./js/auth.js?v=7.0.15",
     
     "./manifest.json",
-    "./style.css?v=4.8",
+    "./style.css?v=7.0.15",
     "./tailwind-lib.js",
     "./fonts.css",
     "./fonts/Amiri/Amiri-Regular.ttf",
@@ -96,7 +96,7 @@ self.addEventListener("install", (event) => {
     // Cache one-by-one so a single missing file doesn't break the whole install
     for (const url of precacheUrls) {
       try {
-        const req = new Request(url, { cache: "reload" });
+        const req = new Request(url);
         const res = await fetch(req);
         if (res.ok) await cache.put(req, res.clone());
       } catch (_) {
@@ -122,14 +122,6 @@ self.addEventListener("activate", (event) => {
     );
 
     await self.clients.claim();
-
-    // Force reload open pages/apps so new assets load immediately
-    try {
-      const list = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-      for (const client of list) {
-        try { await client.navigate(client.url); } catch (_) {}
-      }
-    } catch (_) {}
   })());
 });
 
@@ -154,6 +146,8 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => null);
 
+      event.waitUntil(fetchPromise);
+
       return cached || (await fetchPromise) || Response.error();
     })());
     return;
@@ -165,23 +159,30 @@ self.addEventListener("fetch", (event) => {
   // Navigations: network-first with offline fallback
   if (req.mode === "navigate" || req.destination === "document") {
     event.respondWith((async () => {
-      try {
-        const fresh = await fetch(new Request(req, { cache: "reload" }));
-        if (fresh && fresh.ok && url.origin === self.location.origin) {
-          await putIfCacheable(RUNTIME, req, fresh);
-        }
-        return fresh;
-      } catch (_) {
-        const cached = await caches.match(req);
-        if (cached) return cached;
+      const cached = await caches.match(req);
 
-        const fallback = await caches.match(OFFLINE_FALLBACK_URL, { ignoreSearch: true });
-        if (fallback) return fallback;
+      const fetchPromise = fetch(req)
+        .then(async (fresh) => {
+          if (fresh && fresh.ok && url.origin === self.location.origin) {
+            await putIfCacheable(RUNTIME, req, fresh);
+          }
+          return fresh;
+        })
+        .catch(() => null);
 
-        const indexUrl = new URL("./index.html", self.registration.scope).href;
-        const indexFallback = await caches.match(indexUrl, { ignoreSearch: true });
-        return indexFallback || Response.error();
-      }
+      event.waitUntil(fetchPromise);
+
+      if (cached) return cached;
+
+      const fresh = await fetchPromise;
+      if (fresh) return fresh;
+
+      const fallback = await caches.match(OFFLINE_FALLBACK_URL, { ignoreSearch: true });
+      if (fallback) return fallback;
+
+      const indexUrl = new URL("./index.html", self.registration.scope).href;
+      const indexFallback = await caches.match(indexUrl, { ignoreSearch: true });
+      return indexFallback || Response.error();
     })());
     return;
   }
@@ -189,14 +190,21 @@ self.addEventListener("fetch", (event) => {
   // ✅ Data JSON (Noor): network-first to allow daily updates of question counts/content
   if (url.origin === self.location.origin && url.pathname.includes('/Data/Noor/') && url.pathname.endsWith('.json')) {
     event.respondWith((async () => {
-      try {
-        const fresh = await fetch(new Request(req, { cache: "reload" }));
-        if (fresh && fresh.ok) await putIfCacheable(RUNTIME, req, fresh);
-        return fresh;
-      } catch (_) {
-        const cached = await caches.match(req);
-        return cached || Response.error();
-      }
+      const cached = await caches.match(req);
+
+      const fetchPromise = fetch(req)
+        .then(async (fresh) => {
+          if (fresh && fresh.ok) await putIfCacheable(RUNTIME, req, fresh);
+          return fresh;
+        })
+        .catch(() => null);
+
+      event.waitUntil(fetchPromise);
+
+      if (cached) return cached;
+
+      const fresh = await fetchPromise;
+      return fresh || Response.error();
     })());
     return;
   }
@@ -204,14 +212,21 @@ self.addEventListener("fetch", (event) => {
   // Same-origin assets: network-first (reload), fallback to cache
   if (url.origin === self.location.origin) {
     event.respondWith((async () => {
-      try {
-        const fresh = await fetch(new Request(req, { cache: "reload" }));
-        if (fresh && fresh.ok) await putIfCacheable(RUNTIME, req, fresh);
-        return fresh;
-      } catch (_) {
-        const cached = await caches.match(req);
-        return cached || Response.error();
-      }
+      const cached = await caches.match(req);
+
+      const fetchPromise = fetch(req)
+        .then(async (fresh) => {
+          if (fresh && fresh.ok) await putIfCacheable(RUNTIME, req, fresh);
+          return fresh;
+        })
+        .catch(() => null);
+
+      event.waitUntil(fetchPromise);
+
+      if (cached) return cached;
+
+      const fresh = await fetchPromise;
+      return fresh || Response.error();
     })());
     return;
   }
@@ -226,5 +241,3 @@ self.addEventListener("fetch", (event) => {
     }
   })());
 });
-
-
