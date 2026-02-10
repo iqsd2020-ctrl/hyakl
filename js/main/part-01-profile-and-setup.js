@@ -58,7 +58,7 @@ updateProfileUI();
     } catch(e) { console.error("Error loading profile:", e); }
 }
 
-function getAvatarHTML(imgUrl, frameId, sizeClass = "w-10 h-10") {
+function getAvatarHTML(imgUrl, frameId, sizeClass = "w-10 h-10", fallbackText = "") {
     const frameObj = getFrameById(frameId);
     const frameClass = frameObj.cssClass;
     
@@ -68,8 +68,12 @@ const safeImgUrl = sanitizeImageUrl(imgUrl);
 if (safeImgUrl) {
     imgContent = `<img src="${escapeHTML(safeImgUrl)}" class="w-full h-full object-cover rounded-full" referrerpolicy="no-referrer">`;
 } else {
-    // أيقونة افتراضية
-    imgContent = `<div class="w-full h-full rounded-full bg-slate-900 flex items-center justify-center border border-slate-600"><span class="material-symbols-rounded text-slate-200" style="font-size: 1.2em;">account_circle</span></div>`;
+    if (fallbackText) {
+        imgContent = `<div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-center px-1"><span class="text-[9px] leading-tight text-slate-200 font-bold">${escapeHTML(fallbackText)}</span></div>`;
+    } else {
+        // أيقونة افتراضية
+        imgContent = `<div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center shadow-inner"><span class="material-symbols-rounded text-slate-200" style="font-size: 1.2em;">account_circle</span></div>`;
+    }
 }
 
     return `
@@ -109,7 +113,15 @@ function updateProfileUI() {
         
         // استخدام دالة بناء الإطار (نمرر w-full h-full لملء الزر)
         // ملاحظة: getAvatarHTML موجودة في الكود لديك وتدعم الإطارات
-        const avatarHtml = getAvatarHTML(userProfile.customAvatar, currentFrame, "w-full h-full");
+        let avatarUrl = '';
+        let fallbackText = '';
+        if (typeof isGuestMode === 'function' && isGuestMode()) {
+            avatarUrl = 'Icon.png';
+        } else {
+            avatarUrl = userProfile.customAvatar || (window.auth && window.auth.currentUser && window.auth.currentUser.photoURL ? window.auth.currentUser.photoURL : '');
+            fallbackText = 'ضع صورتك هنا';
+        }
+        const avatarHtml = getAvatarHTML(avatarUrl, currentFrame, "w-full h-full", fallbackText);
         
         // حقن الكود الجديد
         btn.innerHTML = avatarHtml;
@@ -166,6 +178,32 @@ function updateProfileUI() {
         if (guestAuthBtnProfile) guestAuthBtnProfile.classList.add('hidden');
         if (guestAuthBtnModal) guestAuthBtnModal.classList.add('hidden');
         if (guestAuthBtnLeaderboard) guestAuthBtnLeaderboard.classList.add('hidden');
+    }
+
+    const profileCardAvatarImg = getEl('profile-card-avatar-img');
+    const profileCardAvatarText = getEl('profile-card-avatar-text');
+    const profileCardAvatarFrame = getEl('profile-card-avatar-frame');
+    if (profileCardAvatarImg && profileCardAvatarText) {
+        const guestMode = (typeof isGuestMode === 'function') && isGuestMode();
+        const googleUrl = (!guestMode && window.auth && window.auth.currentUser && window.auth.currentUser.photoURL) ? window.auth.currentUser.photoURL : '';
+        const candidateUrl = guestMode ? 'Icon.png' : (userProfile.customAvatar || googleUrl);
+        const safeUrl = sanitizeImageUrl(candidateUrl);
+
+        if (safeUrl) {
+            profileCardAvatarImg.src = safeUrl;
+            profileCardAvatarImg.className = guestMode ? 'w-full h-full object-contain p-2' : 'w-full h-full object-cover p-0';
+            profileCardAvatarImg.classList.remove('hidden');
+            profileCardAvatarText.classList.add('hidden');
+        } else {
+            profileCardAvatarImg.src = '';
+            profileCardAvatarImg.classList.add('hidden');
+            profileCardAvatarText.classList.remove('hidden');
+        }
+    }
+    if (profileCardAvatarFrame) {
+        const currentFrame = userProfile.equippedFrame || 'default';
+        const frameObj = getFrameById(currentFrame);
+        profileCardAvatarFrame.className = `avatar-frame-overlay ${frameObj.cssClass}`;
     }
 
 }
@@ -232,7 +270,23 @@ window.openGuestAuth = function() {
         try { hide('auth-loading'); } catch (_) {}
     } catch (_) {}
 };
+window.openGuestAuthRegister = function() {
+    try {
+        if (typeof isGuestMode === 'function' && !isGuestMode()) return;
 
+        try { document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active')); } catch (_) {}
+        try { toggleMenu(false); } catch (_) {}
+
+        try { hide('leaderboard-view'); } catch (_) {}
+        try { hide('welcome-area'); } catch (_) {}
+        try { hide('bottom-nav'); } catch (_) {}
+
+        try { show('login-area'); } catch (_) {}
+        try { hide('login-view'); } catch (_) {}
+        try { show('register-view'); } catch (_) {}
+        try { hide('auth-loading'); } catch (_) {}
+    } catch (_) {}
+};
 // ✅ إيقاف تأثير الوميض الأحمر (Low Health Vignette) عند الخروج من اللعب
 function clearLowHealthVignette() {
     const vignette = getEl('low-health-vignette');

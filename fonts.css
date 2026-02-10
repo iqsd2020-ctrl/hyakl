@@ -1,6 +1,3 @@
-/* Local fonts (offline) */
-
-/* Amiri */
 @font-face {
   font-family: "Amiri";
   src: url("./fonts/Amiri/Amiri-Regular.ttf") format("truetype");
@@ -29,8 +26,6 @@
   font-style: italic;
   font-display: swap;
 }
-
-/* Reem Kufi */
 @font-face {
   font-family: "Reem Kufi";
   src: url("./fonts/ReemKufi/static/ReemKufi-Regular.ttf") format("truetype");
@@ -59,11 +54,6 @@
   font-style: normal;
   font-display: swap;
 }
-
-/* Material Symbols Rounded (اختياري لجعل الأيقونات بدون تحميل خارجي)
-   1) حمّل ملف woff2 وضعه هنا: ./fonts/MaterialSymbolsRounded.woff2
-   2) بعدها فعّل التعريفات التالية.
-*/
 @font-face {
   font-family: "Material Symbols Rounded";
   font-style: normal;

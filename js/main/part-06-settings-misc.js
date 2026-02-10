@@ -268,7 +268,7 @@ let __giftdayApiPromise = null;
 async function __getGiftdayAPI() {
     if (__giftdayApiPromise) return __giftdayApiPromise;
 
-    __giftdayApiPromise = import(`../giftday.js?v=4.0.4`)
+    __giftdayApiPromise = import(`../giftday.js?v=7.0.15`)
         .then((mod) => {
             if (!mod || typeof mod.createGiftdayAPI !== 'function') return null;
             return mod.createGiftdayAPI({

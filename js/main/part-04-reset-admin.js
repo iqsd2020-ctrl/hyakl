@@ -91,6 +91,10 @@ bind('user-profile-btn', 'click', () => {
     
     // 1. تعبئة البيانات الأساسية
     getEl('edit-username').value = userProfile.username;
+    getEl('edit-gender-male').checked = false;
+    getEl('edit-gender-female').checked = false;
+    if (userProfile.gender === 'male') getEl('edit-gender-male').checked = true;
+    else if (userProfile.gender === 'female') getEl('edit-gender-female').checked = true;
     
     // 2. عرض تاريخ الانضمام
     let joinDateStr = "غير معروف";
@@ -108,13 +112,27 @@ bind('user-profile-btn', 'click', () => {
     if (oldFrame) oldFrame.remove();
 
     // ب) عرض الصورة أو الأيقونة
+    const guestMode = (typeof isGuestMode === 'function') && isGuestMode();
+    const googlePhotoUrl = (!guestMode && window.auth && window.auth.currentUser && window.auth.currentUser.photoURL) ? sanitizeImageUrl(window.auth.currentUser.photoURL) : '';
     if(userProfile.customAvatar) {
          getEl('profile-img-preview').src = userProfile.customAvatar;
          show('profile-img-preview');
          hide('profile-icon-preview');
          show('delete-custom-avatar');
+    } else if (guestMode) {
+         getEl('profile-img-preview').src = 'Icon.png';
+         show('profile-img-preview');
+         hide('profile-icon-preview');
+         hide('delete-custom-avatar');
+    } else if (googlePhotoUrl) {
+         getEl('profile-img-preview').src = googlePhotoUrl;
+         show('profile-img-preview');
+         hide('profile-icon-preview');
+         hide('delete-custom-avatar');
     } else {
          hide('profile-img-preview');
+         const iconBox = getEl('profile-icon-preview');
+         if (iconBox) iconBox.innerHTML = '<span class="text-[10px] font-bold text-slate-300 text-center leading-tight px-1">ضع صورتك هنا</span>';
          show('profile-icon-preview');
          hide('delete-custom-avatar');
     }
@@ -244,6 +262,14 @@ bind('save-user-btn', 'click', async () => {
         userProfile.customAvatar = null;
         change = true;
         userProfile.deleteCustom = false;
+    }
+
+    const genderChecked = document.querySelector('input[name="edit-gender"]:checked');
+    const g = genderChecked ? genderChecked.value : '';
+    if (g && g !== userProfile.gender) {
+        updates.gender = g;
+        userProfile.gender = g;
+        change = true;
     }
 
     // تنفيذ الحفظ
