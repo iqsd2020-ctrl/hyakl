@@ -1503,11 +1503,14 @@
         <div class="flex items-center gap-3">
             <div class="rank-icon flex items-center justify-center min-w-[40px] shrink-0 text-2xl drop-shadow-md"></div>
             <div class="player-avatar-container flex items-center justify-center shrink-0 relative z-10 w-10 h-10">
+                    <span class="player-level-badge absolute bottom-0.5 right-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-400 text-[#0f172a] text-[9px] font-black border border-slate-900/80 shadow-[0_0_6px_rgba(251,191,36,0.35)] z-20 pointer-events-none">١</span>
                 </div>
             <div class="flex flex-col overflow-hidden w-full justify-center">
-                <span class="player-name text-white font-bold group-hover:text-amber-400 transition whitespace-nowrap overflow-hidden text-ellipsis">
-                    اسم اللاعب
-                </span>
+                <div class="flex items-center gap-2 min-w-0">
+                    <span class="player-name text-white font-bold group-hover:text-amber-400 transition whitespace-nowrap overflow-hidden text-ellipsis min-w-0">
+                        اسم اللاعب
+                    </span>
+                </div>
                 <div class="player-status flex items-center gap-1.5 mt-1">
                     <span class="status-dot w-2 h-2 rounded-full inline-block"></span>
                     <span class="status-text text-[9px] opacity-80 leading-none pt-0.5"></span>

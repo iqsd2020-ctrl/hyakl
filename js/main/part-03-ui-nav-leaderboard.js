@@ -514,12 +514,18 @@ function renderLeaderboardList(docs, container, statusUpdates) {
         const rankEl = clone.querySelector('.rank-icon');
         const avatarBox = clone.querySelector('.player-avatar-container');
         const nameEl = clone.querySelector('.player-name');
+        const levelEl = clone.querySelector('.player-level-badge');
         const scoreEl = clone.querySelector('.player-score');
         const statusDot = clone.querySelector('.status-dot');
         const statusText = clone.querySelector('.status-text');
 
         // 3. تعبئة البيانات الأساسية
         nameEl.textContent = data.username;
+        if (levelEl) {
+            const totalCorrect = (data && data.stats) ? data.stats.totalCorrect : 0;
+            const levelNum = (typeof computePlayerLevelProgress === 'function') ? computePlayerLevelProgress(totalCorrect).level : 1;
+            levelEl.textContent = formatNumberAr(levelNum);
+        }
         scoreEl.textContent = formatNumberAr(correctCount);
 
         const nameLen = (data.username || "").length;
@@ -569,7 +575,7 @@ function renderLeaderboardList(docs, container, statusUpdates) {
 
         // إكمال باقي الكود (الأفاتار والحالة) كما هو...
         const pFrame = data.equippedFrame || 'default';
-        avatarBox.innerHTML = getAvatarHTML(data.customAvatar, pFrame, "w-10 h-10");
+        avatarBox.insertAdjacentHTML('afterbegin', getAvatarHTML(data.customAvatar, pFrame, "w-10 h-10"));
 
         const userStatus = statusUpdates[userId];
         const isOnline = userStatus && userStatus.state === 'online';

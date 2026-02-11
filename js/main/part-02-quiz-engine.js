@@ -377,6 +377,24 @@ async function endQuiz() {
         maxMarathonScore: stats.maxMarathonScore || 0
     };
 
+    let levelReward = null;
+    try {
+        if (typeof computePlayerLevelProgress === 'function') {
+            const oldLevel = computePlayerLevelProgress(oldTotalCorrect).level;
+            const newLevel = computePlayerLevelProgress(newStats.totalCorrect).level;
+            const gainedLevels = Math.max(0, newLevel - oldLevel);
+            if (gainedLevels > 0) {
+                levelReward = {
+                    score: 100 * gainedLevels,
+                    lives: 2 * gainedLevels,
+                    fifty: 2 * gainedLevels,
+                    hint: 2 * gainedLevels,
+                    skip: 2 * gainedLevels
+                };
+            }
+        }
+    } catch (_) {}
+
     const currentTopic = quizState.contextTopic;
     if (currentTopic && currentTopic !== 'عام' && currentTopic !== 'مراجعة الأخطاء') {
         const oldTopicScore = Number(newStats.topicCorrect[currentTopic]) || 0;
@@ -455,6 +473,16 @@ async function endQuiz() {
     if (isGuestMode()) {
         userProfile.balance = (Number(userProfile.balance ?? userProfile.highScore ?? 0)) + quizState.score;
         userProfile.highScore = userProfile.balance;
+        if (levelReward) {
+            userProfile.balance += levelReward.score;
+            userProfile.highScore = userProfile.balance;
+            if (!userProfile.inventory) userProfile.inventory = { lives: 0, helpers: { fifty: 0, hint: 0, skip: 0 }, themes: ['default'], frames: ['default'] };
+            if (!userProfile.inventory.helpers) userProfile.inventory.helpers = { fifty: 0, hint: 0, skip: 0 };
+            userProfile.inventory.lives = (userProfile.inventory.lives || 0) + levelReward.lives;
+            userProfile.inventory.helpers.fifty = (userProfile.inventory.helpers.fifty || 0) + levelReward.fifty;
+            userProfile.inventory.helpers.hint = (userProfile.inventory.helpers.hint || 0) + levelReward.hint;
+            userProfile.inventory.helpers.skip = (userProfile.inventory.helpers.skip || 0) + levelReward.skip;
+        }
         userProfile.stats = newStats;
         userProfile.weeklyStats = weeklyStats;
         userProfile.monthlyStats = monthlyStats;
@@ -483,14 +511,21 @@ async function endQuiz() {
     }
 
     const firestoreUpdates = {
-        balance: increment(quizState.score),
-        highScore: increment(quizState.score),
+        balance: increment(quizState.score + (levelReward ? levelReward.score : 0)),
+        highScore: increment(quizState.score + (levelReward ? levelReward.score : 0)),
         stats: newStats,
         weeklyStats: weeklyStats,
         monthlyStats: monthlyStats,
         wrongQuestionsBank: updatedWrongQuestionsBank,
         seenMarathonIds: updatedSeenMarathon
     };
+
+    if (levelReward) {
+        firestoreUpdates['inventory.lives'] = increment(levelReward.lives);
+        firestoreUpdates['inventory.helpers.fifty'] = increment(levelReward.fifty);
+        firestoreUpdates['inventory.helpers.hint'] = increment(levelReward.hint);
+        firestoreUpdates['inventory.helpers.skip'] = increment(levelReward.skip);
+    }
 
     // ✅ seenQuestions للأوضاع العامة، و trueFalseSeen لوضع صح/خطأ
     if (quizState.mode === 'truefalse') {
@@ -504,6 +539,16 @@ async function endQuiz() {
         
         userProfile.balance = (Number(userProfile.balance ?? userProfile.highScore ?? 0)) + quizState.score;
                     userProfile.highScore = userProfile.balance;
+        if (levelReward) {
+            userProfile.balance += levelReward.score;
+            userProfile.highScore = userProfile.balance;
+            if (!userProfile.inventory) userProfile.inventory = { lives: 0, helpers: { fifty: 0, hint: 0, skip: 0 }, themes: ['default'], frames: ['default'] };
+            if (!userProfile.inventory.helpers) userProfile.inventory.helpers = { fifty: 0, hint: 0, skip: 0 };
+            userProfile.inventory.lives = (userProfile.inventory.lives || 0) + levelReward.lives;
+            userProfile.inventory.helpers.fifty = (userProfile.inventory.helpers.fifty || 0) + levelReward.fifty;
+            userProfile.inventory.helpers.hint = (userProfile.inventory.helpers.hint || 0) + levelReward.hint;
+            userProfile.inventory.helpers.skip = (userProfile.inventory.helpers.skip || 0) + levelReward.skip;
+        }
         userProfile.stats = newStats;
         userProfile.weeklyStats = weeklyStats;
         userProfile.monthlyStats = monthlyStats;
@@ -527,6 +572,17 @@ async function endQuiz() {
         toast("تم حفظ النقاط محلياً مؤقتاً لضعف الاتصال", "info");
         userProfile.balance = (Number(userProfile.balance ?? userProfile.highScore ?? 0)) + quizState.score;
                     userProfile.highScore = userProfile.balance;
+        if (levelReward) {
+            userProfile.balance += levelReward.score;
+            userProfile.highScore = userProfile.balance;
+            if (!userProfile.inventory) userProfile.inventory = { lives: 0, helpers: { fifty: 0, hint: 0, skip: 0 }, themes: ['default'], frames: ['default'] };
+            if (!userProfile.inventory.helpers) userProfile.inventory.helpers = { fifty: 0, hint: 0, skip: 0 };
+            userProfile.inventory.lives = (userProfile.inventory.lives || 0) + levelReward.lives;
+            userProfile.inventory.helpers.fifty = (userProfile.inventory.helpers.fifty || 0) + levelReward.fifty;
+            userProfile.inventory.helpers.hint = (userProfile.inventory.helpers.hint || 0) + levelReward.hint;
+            userProfile.inventory.helpers.skip = (userProfile.inventory.helpers.skip || 0) + levelReward.skip;
+        }
+        userProfile.stats = newStats;
         userProfile.weeklyStats = weeklyStats;
         userProfile.monthlyStats = monthlyStats;
         // ✅ حتى مع فشل الحفظ في السيرفر: نثبّت ذاكرة الأسئلة محلياً لمنع التكرار
