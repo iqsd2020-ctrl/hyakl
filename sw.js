@@ -1,24 +1,24 @@
 const CONFIG = {
-  version: "7.0.15",
+  version: "7.0.16",
   staticAssets: [
     "./",
     "./index.html",
     "./js/data.js",
-    "./js/main.js?v=7.0.15",
-    "./js/main/part-00-core.js?v=7.0.15",
-    "./js/main/part-01-profile-and-setup.js?v=7.0.15",
-    "./js/main/part-02-quiz-engine.js?v=7.0.15",
-    "./js/main/part-03-ui-nav-leaderboard.js?v=7.0.15",
-    "./js/main/part-04-reset-admin.js?v=7.0.15",
-    "./js/main/part-05-shop-bag.js?v=7.0.15",
-    "./js/main/part-06-settings-misc.js?v=7.0.15",
-    "./js/main/part-07-truefalse.js?v=7.0.15",
-    "./js/main/part-99-init.js?v=7.0.15",
-    "./js/daily_quests.js?v=7.0.15",
-    "./js/giftday.js?v=7.0.15",
-    "./js/auth.js?v=7.0.15", 
+    "./js/main.js",
+    "./js/main/part-00-core.js",
+    "./js/main/part-01-profile-and-setup.js",
+    "./js/main/part-02-quiz-engine.js",
+    "./js/main/part-03-ui-nav-leaderboard.js",
+    "./js/main/part-04-reset-admin.js",
+    "./js/main/part-05-shop-bag.js",
+    "./js/main/part-06-settings-misc.js",
+    "./js/main/part-07-truefalse.js",
+    "./js/main/part-99-init.js",
+    "./js/daily_quests.js",
+    "./js/giftday.js",
+    "./js/auth.js", 
     "./manifest.json",
-    "./style.css?v=7.0.15",
+    "./style.css",
     "./tailwind-lib.js",
     "./fonts.css",
     "./fonts/Amiri/Amiri-Regular.ttf",
@@ -80,8 +80,11 @@ self.addEventListener("install", (event) => {
       } catch (_) {
       }
     }
-    await self.skipWaiting();
   })());
+});
+self.addEventListener("message", (event) => {
+  const data = event && event.data;
+  if (data && data.type === "SKIP_WAITING") self.skipWaiting();
 });
 self.addEventListener("activate", (event) => {
   event.waitUntil((async () => {

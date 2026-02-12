@@ -9,7 +9,7 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#064E3B">
     <script src="tailwind-lib.js"></script>      
-    <link rel="stylesheet" href="style.css?v=7.0.15">
+    <link rel="stylesheet" href="style.css">
     <style>
         .glass-effect {
             background: rgba(30, 41, 59, 0.7);
@@ -1276,8 +1276,8 @@
         <button class="close-modal w-full text-slate-500 hover:text-white mt-3 text-sm transition">إلغاء</button>
     </div>
 </div>
-<script type="module" src="js/monasbat_banner.js?v=1.0.0"></script>
-    <script type="module" src="js/main.js?v=7.0.15"></script>
+<script type="module" src="js/monasbat_banner.js"></script>
+    <script type="module" src="js/main.js"></script>
             <div id="confirm-modal" class="modal-overlay z-[90]">
         <div class="modal-box border-2 border-amber-500/50 text-center bg-[#0f172a]">
             <div class="mb-4 flex justify-center">
@@ -1322,6 +1322,20 @@
         <div class="relative z-10 flex flex-col gap-3">
             <button id="btn-pwa-install" class="btn-gold-action w-full py-3">تثبيت التطبيق</button>
             <button id="btn-pwa-install-close" class="w-full text-slate-500 hover:text-white text-sm transition font-heading">لاحقًا</button>
+        </div>
+    </div>
+</div>
+<div id="update-available-modal" class="modal-overlay z-[80]">
+    <div class="modal-box border-2 border-amber-500/50 text-center bg-[#0f172a] relative overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-b from-amber-500/10 to-transparent pointer-events-none"></div>
+        <div class="mb-4 flex justify-center relative z-10">
+            <span class="material-symbols-rounded text-5xl text-amber-400 animate-bounce">system_update</span>
+        </div>
+        <h3 class="text-2xl font-bold text-white mb-2 font-heading relative z-10">تحديث متاح</h3>
+        <p class="text-slate-300 text-sm mb-6 leading-relaxed relative z-10">تتوفر نسخة جديدة من التطبيق. اضغط تحديث الآن لتفعيلها.</p>
+        <div class="relative z-10 flex gap-3 justify-center">
+            <button id="btn-update-now" class="btn-gold-action w-1/2 py-2 text-sm">تحديث الآن</button>
+            <button id="btn-update-later" class="bg-slate-700 text-white w-1/2 rounded-xl border border-slate-600 hover:bg-slate-600 transition font-heading">لاحقًا</button>
         </div>
     </div>
 </div>
@@ -1383,8 +1397,46 @@
     })();
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
+            const updateModal = document.getElementById('update-available-modal');
+            const btnUpdateNow = document.getElementById('btn-update-now');
+            const btnUpdateLater = document.getElementById('btn-update-later');
+            let refreshing = false;
+
+            function showUpdateModal() { if (updateModal) updateModal.classList.add('active'); }
+            function hideUpdateModal() { if (updateModal) updateModal.classList.remove('active'); }
+
             navigator.serviceWorker.register('./sw.js')
-                .then(registration => console.log('SW Registered:', registration.scope))
+                .then(registration => {
+                    console.log('SW Registered:', registration.scope);
+
+                    if (btnUpdateLater) btnUpdateLater.addEventListener('click', hideUpdateModal);
+                    if (btnUpdateNow) btnUpdateNow.addEventListener('click', () => {
+                        if (registration.waiting) {
+                            registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                            hideUpdateModal();
+                        }
+                    });
+
+                    navigator.serviceWorker.addEventListener('controllerchange', () => {
+                        if (refreshing) return;
+                        refreshing = true;
+                        window.location.reload();
+                    });
+
+                    if (registration.waiting && navigator.serviceWorker.controller) {
+                        showUpdateModal();
+                    }
+
+                    registration.addEventListener('updatefound', () => {
+                        const newWorker = registration.installing;
+                        if (!newWorker) return;
+                        newWorker.addEventListener('statechange', () => {
+                            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                showUpdateModal();
+                            }
+                        });
+                    });
+                })
                 .catch(err => console.log('SW Registration Failed:', err));
         });
     }
