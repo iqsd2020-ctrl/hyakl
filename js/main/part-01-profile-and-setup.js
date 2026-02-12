@@ -89,6 +89,9 @@ function updateProfileUI() {
     const nameEl = getEl('username-display');
     if (nameEl) nameEl.textContent = userProfile.username;
 
+    const privacyToggle = getEl('privacy-hide-online-toggle');
+    if (privacyToggle) privacyToggle.checked = !!(userProfile && userProfile.privacy && userProfile.privacy.hideOnlineStatus);
+
     // حركة العداد للشريط السفلي
     const scoreEl = getEl('header-score');
     if (scoreEl) {
@@ -186,7 +189,7 @@ function updateProfileUI() {
     if (profileCardAvatarImg && profileCardAvatarText) {
         const guestMode = (typeof isGuestMode === 'function') && isGuestMode();
         const googleUrl = (!guestMode && window.auth && window.auth.currentUser && window.auth.currentUser.photoURL) ? window.auth.currentUser.photoURL : '';
-        const candidateUrl = guestMode ? 'Icon.png' : (userProfile.customAvatar || googleUrl);
+        const candidateUrl = guestMode ? (new URL('Icon.png', (document.baseURI || location.href))).href : (userProfile.customAvatar || googleUrl);
         const safeUrl = sanitizeImageUrl(candidateUrl);
 
         if (safeUrl) {

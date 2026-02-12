@@ -643,26 +643,36 @@ let banRefreshInProgress = false;
 
 // تم نقل بيانات الإطارات إلى: js/frames.js
 // دالة تسجيل حالة التواجد في RTDB (مصححة)
+let __presenceUnsub = null;
+
 function setupPresenceSystem() {
     if (!currentUser || !effectiveUserId) return;
 
     const statusRef = ref(rtdb, `status/${effectiveUserId}`);
     const isOnlineRef = ref(rtdb, '.info/connected');
 
-    onValue(isOnlineRef, (snapshot) => {
-        // إذا لم يكن متصلاً، لا نفعل شيئاً
-        if (snapshot.val() === false) {
+    try { __presenceUnsub && __presenceUnsub(); } catch (_) {}
+    __presenceUnsub = null;
+
+    __presenceUnsub = onValue(isOnlineRef, (snapshot) => {
+        if (snapshot.val() === false) return;
+
+        const hideOnline = !!(userProfile && userProfile.privacy && userProfile.privacy.hideOnlineStatus);
+
+        if (hideOnline) {
+            try { onDisconnect(statusRef).cancel(); } catch (_) {}
+            set(statusRef, {
+                state: 'disabled',
+                username: userProfile.username
+            });
             return;
         }
 
-        // 1. عندما يقطع المستخدم الاتصال (يغلق التطبيق)، اجعل حالته offline
-        // هذا الأمر يُرسل للسيرفر الآن، ولكنه ينفذ لاحقاً عند انقطاع الاتصال
         onDisconnect(statusRef).set({
             state: 'offline',
             last_changed: rtdbTimestamp(),
             username: userProfile.username
         }).then(() => {
-            // 2. مادام الاتصال موجوداً الآن، اجعل الحالة online
             set(statusRef, {
                 state: 'online',
                 last_changed: rtdbTimestamp(),

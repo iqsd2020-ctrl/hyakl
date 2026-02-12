@@ -776,6 +776,22 @@ bind('nav-favs', 'click', () => {
 
 bind('nav-mistakes', 'click', () => { toggleMenu(false); getEl('review-mistakes-btn').click(); });
 bind('nav-settings', 'click', () => { toggleMenu(false); openModal('settings-modal'); });
+bind('nav-privacy', 'click', () => { toggleMenu(false); openModal('privacy-modal'); });
+
+bind('privacy-hide-online-toggle', 'change', async (e) => {
+    if (!userProfile) return;
+    const v = !!(e && e.target && e.target.checked);
+    if (!userProfile.privacy) userProfile.privacy = {};
+    userProfile.privacy.hideOnlineStatus = v;
+
+    if (typeof isGuestMode === 'function' && isGuestMode()) {
+        try { scheduleGuestSave(true); } catch (_) {}
+    } else {
+        try { await updateDoc(doc(db, "users", effectiveUserId), { 'privacy.hideOnlineStatus': v }); } catch (_) {}
+    }
+
+    try { setupPresenceSystem(); } catch (_) {}
+});
 // التغيير يحدث عند ترك الزر لتقليل الوميض
 // --- تحسين منطق تغيير حجم الخط وحفظه ---
 
