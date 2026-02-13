@@ -312,6 +312,17 @@ async function startMatch(matchId, matchData) {
     challengeState.myLives = 3;
     challengeState.opponentProgress = { answered: 0, correct: 0, lives: 3 };
 
+    document.getElementById('player-profile-modal')?.classList.remove('active');
+    const myId = window.effectiveUserId;
+    if (myId != null && matchData) {
+        challengeState.isHost = (myId === matchData.player1Id);
+        if (challengeState.isHost) {
+            challengeState.opponentData = { uid: matchData.player2Id, username: matchData.player2Name };
+        } else {
+            challengeState.opponentData = { uid: matchData.player1Id, username: matchData.player1Name };
+        }
+    }
+
     // Load Questions
     challengeState.questions = await fetchQuestionsByIds(matchData.questionIds);
     
@@ -321,7 +332,7 @@ async function startMatch(matchId, matchData) {
     document.getElementById('challenge-match-view').classList.remove('hidden');
     
     // Setup RTDB Presence & Progress
-    setupMatchRealtime();
+    setupMatchRealtime(matchData);
     
     // Show first question
     showNextChallengeQuestion();
@@ -354,10 +365,14 @@ async function fetchQuestionsByIds(ids) {
     }
 }
 
-function setupMatchRealtime() {
+function setupMatchRealtime(matchData) {
     const matchId = challengeState.currentMatchId;
     const myId = window.effectiveUserId;
-    const oppId = challengeState.opponentData.uid;
+    const p1 = matchData?.player1Id;
+    const p2 = matchData?.player2Id;
+    const oppId = (myId === p1) ? p2 : p1;
+
+    if (myId == null || oppId == null) return;
 
     const myRef = ref(window.rtdb, `matches/${matchId}/${myId}`);
     const oppRef = ref(window.rtdb, `matches/${matchId}/${oppId}`);
@@ -381,6 +396,23 @@ function setupMatchRealtime() {
             updateMatchUI();
             checkMatchEndConditions();
         }
+    });
+
+    challengeState.matchUnsub = onSnapshot(doc(window.db, "challengeMatches", matchId), (snap) => {
+        const d = snap.data();
+        if (!d) return;
+        const oppField = (myId === d.player1Id) ? 'player2Progress' : 'player1Progress';
+        const opp = d[oppField];
+        if (!opp) return;
+
+        challengeState.opponentProgress = {
+            answered: opp.answered ?? challengeState.opponentProgress.answered ?? 0,
+            correct: opp.correct ?? challengeState.opponentProgress.correct ?? 0,
+            lives: opp.lives ?? challengeState.opponentProgress.lives ?? 3,
+            status: challengeState.opponentProgress.status
+        };
+        updateMatchUI();
+        checkMatchEndConditions();
     });
 }
 
@@ -499,6 +531,7 @@ function checkMatchEndConditions() {
 
 async function finishMatch(reason = "normal") {
     if (challengeState.rtdbUnsub) challengeState.rtdbUnsub();
+    if (challengeState.matchUnsub) challengeState.matchUnsub();
     
     const myRef = ref(window.rtdb, `matches/${challengeState.currentMatchId}/${window.effectiveUserId}`);
     set(myRef, {
