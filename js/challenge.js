@@ -65,6 +65,9 @@ function listenForIncomingInvites() {
                 showIncomingInvite(inviteId, invite);
             }
         });
+}, (err) => {
+        console.error(err);
+        window.toast("تعذر استقبال التحديات: صلاحيات غير كافية", "error");
     });
 }
 
