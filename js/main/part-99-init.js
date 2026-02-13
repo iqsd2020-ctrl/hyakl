@@ -32,6 +32,12 @@ onAuthStateChanged(auth, async (user) => {
 
             await loadProfile(effectiveUserId);
             setupPresenceSystem();
+            window.toArabicDigits = window.toArabicDigits || function (value) {
+                const s = (value === null || value === undefined) ? '' : String(value);
+                if (!/\d/.test(s)) return s;
+                return s.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
+            };
+            try { initChallengeSystem(); } catch(e) { console.error('Challenge init failed', e); }
             hide('auth-loading');
             hide('login-area');
             navToHome();

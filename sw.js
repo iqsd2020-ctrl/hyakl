@@ -17,6 +17,7 @@ const CONFIG = {
     "./js/daily_quests.js",
     "./js/giftday.js",
     "./js/auth.js", 
+    "./js/challenge.js",
     "./manifest.json",
     "./style.css",
     "./tailwind-lib.js",

@@ -1466,3 +1466,27 @@ to{opacity:1;transform:translateY(0)}}
 #bag-modal #shop-view .grid > button:active{
   transform:translateY(1px);
 }
+
+/* --- Challenge UI --- */
+.challenge-opt-btn {
+    transition: all 0.2s ease;
+}
+.challenge-opt-btn:active {
+    transform: scale(0.95);
+}
+
+#challenge-match-view {
+    background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%);
+}
+
+.option-btn.btn-correct {
+    border-color: #10b981 !important;
+    background-color: rgba(16, 185, 129, 0.1) !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+.option-btn.btn-incorrect {
+    border-color: #ef4444 !important;
+    background-color: rgba(239, 68, 68, 0.1) !important;
+    box-shadow: 0 0 15px rgba(239, 68, 68, 0.2);
+}

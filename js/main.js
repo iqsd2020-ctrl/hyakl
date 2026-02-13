@@ -9,6 +9,7 @@ import { renderAchievementsView } from './achievements.js';
 import { initMessaging } from './messaging.js';
 import { framesData, getFrameById, getFrameName } from './frames.js';
 import { initManualQuestionCountsRefresh } from './refresh_question_counts.js';
+import { initChallengeSystem } from './challenge.js';
 
 // استيراد وظائف المصادقة المخصصة من auth.js (بدون تفرد للاسم)
 import {
@@ -89,6 +90,7 @@ try {
     renderAchievementsView,
     initMessaging,
     initManualQuestionCountsRefresh,
+    initChallengeSystem,
 
     // Daily quests (keep names as used in legacy main.js)
     bindDailyQuestsDeps,

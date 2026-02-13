@@ -717,7 +717,28 @@ function showPlayerProfile(data) {
         bContainer.innerHTML = '<span class="col-span-3 text-xs text-slate-500 py-6">لا توجد أوسمة مكتسبة.</span>';
     }
 
-    // 6. فتح النافذة المنبثقة
+    // 6. منطق زر التحدي
+    const challengeContainer = getEl('challenge-btn-container');
+    if (challengeContainer) {
+        const isMe = (effectiveUserId && data.uid === effectiveUserId);
+        const isGuest = (typeof isGuestMode === 'function' && isGuestMode());
+        const isHidden = (data.privacy && data.privacy.hideOnlineStatus);
+        
+        // لا يظهر الزر إذا كان اللاعب هو نفسه، أو في وضع الضيف، أو الخصم مخفي
+        if (isMe || isGuest || isHidden) {
+            challengeContainer.classList.add('hidden');
+        } else {
+            challengeContainer.classList.remove('hidden');
+            // تخزين بيانات الخصم للوصول إليها عند الضغط على الزر
+            getEl('btn-challenge-friend').onclick = () => {
+                if (typeof openChallengeSetup === 'function') {
+                    openChallengeSetup(data);
+                }
+            };
+        }
+    }
+
+    // 7. فتح النافذة المنبثقة
     openModal('player-profile-modal');
 }
 
