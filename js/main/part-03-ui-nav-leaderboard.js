@@ -502,6 +502,7 @@ function renderLeaderboardList(docs, container, statusUpdates) {
     docs.forEach(doc => {
         const data = doc.data();
         const userId = doc.id;
+        data.uid = data.uid || userId;
 
         const ms = data.monthlyStats || {};
         const correctCount = (ms.key === currentMonthKey && ms.correct) ? ms.correct : 0;

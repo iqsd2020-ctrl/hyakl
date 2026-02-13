@@ -101,6 +101,9 @@ function showIncomingInvite(inviteId, invite) {
 
 export function openChallengeSetup(opponentData) {
     challengeState.opponentData = opponentData;
+    if (challengeState.opponentData && challengeState.opponentData.uid == null) {
+        challengeState.opponentData.uid = challengeState.opponentData.userId || challengeState.opponentData.id;
+    }
     const modal = document.getElementById('challenge-setup-modal');
     if (modal) {
         modal.classList.add('active');
@@ -123,11 +126,18 @@ export function openChallengeSetup(opponentData) {
 async function sendInvite(questionCount) {
     if (!challengeState.opponentData) return;
 
-    // Check if already has a pending invite to this user
+    const fromId = window.effectiveUserId;
+    const toId = challengeState.opponentData.uid;
+
+    if (fromId == null || toId == null) {
+        window.toast("تعذر إرسال الدعوة: بيانات اللاعب غير مكتملة", "error");
+        return;
+    }
+
     const existingQ = query(
         collection(window.db, "challengeInvites"),
-        where("fromId", "==", window.effectiveUserId),
-        where("toId", "==", challengeState.opponentData.uid),
+        where("fromId", "==", fromId),
+        where("toId", "==", toId),
         where("status", "==", "pending")
     );
     const existing = await window.getDocs(existingQ);
@@ -137,9 +147,9 @@ async function sendInvite(questionCount) {
     }
 
     const inviteData = {
-        fromId: window.effectiveUserId,
+        fromId: fromId,
         fromName: window.userProfile.username,
-        toId: challengeState.opponentData.uid,
+        toId: toId,
         questionCount: questionCount,
         status: "pending",
         createdAt: serverTimestamp()
@@ -149,14 +159,20 @@ async function sendInvite(questionCount) {
     challengeState.currentInviteId = docRef.id;
     challengeState.isHost = true;
 
-    showWaitingModal();
+    showWaitingModal(questionCount);
     listenToInviteStatus(docRef.id);
 }
 
-function showWaitingModal() {
+function showWaitingModal(questionCount) {
     const modal = document.getElementById('challenge-waiting-modal');
     const timerSpan = document.getElementById('challenge-timer');
+    const details = document.getElementById('challenge-waiting-details');
     if (!modal) return;
+
+    if (details && challengeState.opponentData) {
+        const name = challengeState.opponentData.username || challengeState.opponentData.name || 'الخصم';
+        details.textContent = `تم إرسال الدعوة إلى ${name} • عدد الأسئلة: ${window.toArabicDigits(questionCount)}`;
+    }
 
     modal.classList.add('active');
     let timeLeft = 60;
