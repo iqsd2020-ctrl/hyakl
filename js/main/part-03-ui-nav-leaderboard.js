@@ -499,14 +499,14 @@ function renderLeaderboardList(docs, container, statusUpdates) {
     const currentMonthKey = getCurrentMonthKey();
     let r = 1;
     
-    docs.forEach(doc => {
+docs.forEach(doc => {
         const data = doc.data();
         const userId = doc.id;
         data.uid = data.uid || userId;
+        data.userId = data.userId || userId;
 
         const ms = data.monthlyStats || {};
         const correctCount = (ms.key === currentMonthKey && ms.correct) ? ms.correct : 0;
-
         // 2. استنساخ القالب
         const clone = template.content.cloneNode(true);
         const row = clone.querySelector('.leaderboard-row');

@@ -101,8 +101,13 @@ function showIncomingInvite(inviteId, invite) {
 
 export function openChallengeSetup(opponentData) {
     challengeState.opponentData = opponentData;
-    if (challengeState.opponentData && challengeState.opponentData.uid == null) {
-        challengeState.opponentData.uid = challengeState.opponentData.userId || challengeState.opponentData.id;
+    if (challengeState.opponentData) {
+        const oid =
+            challengeState.opponentData.uid ??
+            challengeState.opponentData.userId ??
+            challengeState.opponentData.id ??
+            challengeState.opponentData.docId;
+        if (oid != null) challengeState.opponentData.uid = oid;
     }
     const modal = document.getElementById('challenge-setup-modal');
     if (modal) {
@@ -126,11 +131,24 @@ export function openChallengeSetup(opponentData) {
 async function sendInvite(questionCount) {
     if (!challengeState.opponentData) return;
 
-    const fromId = window.effectiveUserId;
-    const toId = challengeState.opponentData.uid;
+    const fromId =
+        window.effectiveUserId ??
+        window.auth?.currentUser?.uid ??
+        window.firebaseAuth?.currentUser?.uid ??
+        window.user?.uid;
 
-    if (fromId == null || toId == null) {
-        window.toast("تعذر إرسال الدعوة: بيانات اللاعب غير مكتملة", "error");
+    const toId =
+        challengeState.opponentData?.uid ??
+        challengeState.opponentData?.userId ??
+        challengeState.opponentData?.id ??
+        challengeState.opponentData?.docId;
+
+    if (fromId == null) {
+        window.toast("تعذر إرسال الدعوة: تعذر تحديد معرف حسابك", "error");
+        return;
+    }
+    if (toId == null) {
+        window.toast("تعذر إرسال الدعوة: تعذر تحديد معرف الخصم", "error");
         return;
     }
 
