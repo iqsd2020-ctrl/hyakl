@@ -32,7 +32,9 @@ let challengeState = {
 
 // --- Initialization ---
 export function initChallengeSystem() {
-    if (!window.db || !window.effectiveUserId) return;
+    if (!window.db) return;
+    window.effectiveUserId = window.effectiveUserId ?? window.auth?.currentUser?.uid ?? window.firebaseAuth?.currentUser?.uid ?? window.user?.uid;
+    if (!window.effectiveUserId) return;
     listenForIncomingInvites();
 }
 

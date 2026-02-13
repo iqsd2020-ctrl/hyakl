@@ -1,5 +1,5 @@
 const CONFIG = {
-  version: "7.0.16",
+  version: "7.0.17",
   staticAssets: [
     "./",
     "./index.html",
@@ -38,7 +38,7 @@ const CACHE_PREFIX = "ahlulbayt-quiz";
 const PRECACHE = `${CACHE_PREFIX}-precache-${CONFIG.version}`;
 const RUNTIME = `${CACHE_PREFIX}-runtime-${CONFIG.version}`;
 const FONT_CACHE = `${CACHE_PREFIX}-fonts-${CONFIG.version}`;
-const OFFLINE_FALLBACK_URL = new URL("./", self.registration.scope).href;
+const OFFLINE_FALLBACK_URL = new URL("./index.html", self.registration.scope).href;
 function isHttpUrl(u) {
   return /^https?:\/\//i.test(u);
 }
@@ -68,19 +68,18 @@ async function putIfCacheable(cacheName, request, response) {
 }
 self.addEventListener("install", (event) => {
   event.waitUntil((async () => {
-    try { await caches.delete(PRECACHE); } catch (_) {}
-    try { await caches.delete(RUNTIME); } catch (_) {}
-    try { await caches.delete(FONT_CACHE); } catch (_) {}
     const cache = await caches.open(PRECACHE);
     const precacheUrls = (CONFIG.staticAssets || []).filter((u) => !isHttpUrl(u));
     for (const url of precacheUrls) {
       try {
-        const req = new Request(url);
+        const abs = new URL(url, self.registration.scope).href;
+        const req = new Request(abs, { cache: "reload" });
         const res = await fetch(req);
-        if (res.ok) await cache.put(req, res.clone());
+        if (res && res.ok) await cache.put(req, res.clone());
       } catch (_) {
       }
     }
+    try { await self.skipWaiting(); } catch (_) {}
   })());
 });
 self.addEventListener("message", (event) => {
@@ -137,10 +136,7 @@ self.addEventListener("fetch", (event) => {
       const fresh = await fetchPromise;
       if (fresh) return fresh;
       const fallback = await caches.match(OFFLINE_FALLBACK_URL, { ignoreSearch: true });
-      if (fallback) return fallback;
-      const indexUrl = new URL("./index.html", self.registration.scope).href;
-      const indexFallback = await caches.match(indexUrl, { ignoreSearch: true });
-      return indexFallback || Response.error();
+      return fallback || Response.error();
     })());
     return;
   }
