@@ -27,6 +27,7 @@ let challengeState = {
     opponentProgress: { answered: 0, correct: 0, lives: 3 },
     inviteTimer: null,
     matchUnsub: null,
+    matchRealtimeUnsub: null,
     rtdbUnsub: null,
     awaitingFinal: false,
     finishLock: false
@@ -314,8 +315,9 @@ async function startMatch(matchId, matchData) {
     challengeState.myLives = 3;
     challengeState.opponentProgress = { answered: 0, correct: 0, lives: 3 };
 
-window.effectiveUserId = window.effectiveUserId ?? window.auth?.currentUser?.uid ?? window.firebaseAuth?.currentUser?.uid ?? window.user?.uid;
-document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
+    window.effectiveUserId = window.effectiveUserId ?? window.auth?.currentUser?.uid ?? window.firebaseAuth?.currentUser?.uid ?? window.user?.uid;
+
+document.getElementById('player-profile-modal')?.classList.remove('active');
     challengeState.awaitingFinal = false;
     challengeState.finishLock = false;
 
@@ -392,6 +394,23 @@ function setupMatchRealtime(matchData) {
             updateMatchUI();
             checkMatchEndConditions();
         }
+    });
+
+    challengeState.matchRealtimeUnsub = onSnapshot(doc(window.db, "challengeMatches", matchId), (snap) => {
+        const d = snap.data();
+        if (!d) return;
+        const oppField = (myId === d.player1Id) ? 'player2Progress' : 'player1Progress';
+        const opp = d[oppField];
+        if (!opp) return;
+
+        challengeState.opponentProgress = {
+            answered: opp.answered ?? challengeState.opponentProgress.answered ?? 0,
+            correct: opp.correct ?? challengeState.opponentProgress.correct ?? 0,
+            lives: opp.lives ?? challengeState.opponentProgress.lives ?? 3,
+            status: challengeState.opponentProgress.status
+        };
+        updateMatchUI();
+        checkMatchEndConditions();
     });
 }
 
@@ -517,6 +536,11 @@ async function finishMatch(reason = "normal") {
     if (challengeState.rtdbUnsub) {
         challengeState.rtdbUnsub();
         challengeState.rtdbUnsub = null;
+    }
+
+    if (challengeState.matchRealtimeUnsub) {
+        challengeState.matchRealtimeUnsub();
+        challengeState.matchRealtimeUnsub = null;
     }
 
     const matchId = challengeState.currentMatchId;

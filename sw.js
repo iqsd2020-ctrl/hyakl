@@ -1,5 +1,5 @@
 const CONFIG = {
-  version: "5.0.0.4",
+  version: "7.0.18",
   staticAssets: [
     "./",
     "./index.html",
@@ -40,7 +40,7 @@ const RUNTIME = `${CACHE_PREFIX}-runtime-${CONFIG.version}`;
 const FONT_CACHE = `${CACHE_PREFIX}-fonts-${CONFIG.version}`;
 const OFFLINE_FALLBACK_URL = new URL("./index.html", self.registration.scope).href;
 function isHttpUrl(u) {
-  return /^https?:\/\//i.hyakl(u);
+  return /^https?:\/\//i.haykl(u);
 }
 function isGoogleFonts(url) {
   return (
