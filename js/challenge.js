@@ -314,7 +314,8 @@ async function startMatch(matchId, matchData) {
     challengeState.myLives = 3;
     challengeState.opponentProgress = { answered: 0, correct: 0, lives: 3 };
 
-document.getElementById('player-profile-modal')?.classList.remove('active');
+window.effectiveUserId = window.effectiveUserId ?? window.auth?.currentUser?.uid ?? window.firebaseAuth?.currentUser?.uid ?? window.user?.uid;
+document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('active'));
     challengeState.awaitingFinal = false;
     challengeState.finishLock = false;
 
@@ -360,7 +361,8 @@ async function fetchQuestionsByIds(ids) {
 }
 function setupMatchRealtime(matchData) {
     const matchId = challengeState.currentMatchId;
-    const myId = window.effectiveUserId;
+    const myId = window.effectiveUserId ?? window.auth?.currentUser?.uid ?? window.firebaseAuth?.currentUser?.uid ?? window.user?.uid;
+    if (myId != null) window.effectiveUserId = myId;
 
     const p1 = matchData?.player1Id;
     const p2 = matchData?.player2Id;
@@ -473,7 +475,9 @@ function handleChallengeAnswer(idx, btn) {
     challengeState.currentIdx++;
     
     // Update RTDB
-    const myRef = ref(window.rtdb, `matches/${challengeState.currentMatchId}/${window.effectiveUserId}`);
+    const myId = window.effectiveUserId ?? window.auth?.currentUser?.uid ?? window.firebaseAuth?.currentUser?.uid ?? window.user?.uid;
+    if (myId != null) window.effectiveUserId = myId;
+    const myRef = ref(window.rtdb, `matches/${challengeState.currentMatchId}/${myId}`);
     updateDoc(doc(window.db, "challengeMatches", challengeState.currentMatchId), {
         [challengeState.isHost ? 'player1Progress' : 'player2Progress']: {
             answered: challengeState.currentIdx,
@@ -516,7 +520,8 @@ async function finishMatch(reason = "normal") {
     }
 
     const matchId = challengeState.currentMatchId;
-    const myId = window.effectiveUserId;
+    const myId = window.effectiveUserId ?? window.auth?.currentUser?.uid ?? window.firebaseAuth?.currentUser?.uid ?? window.user?.uid;
+    if (myId != null) window.effectiveUserId = myId;
     const total = challengeState.questions.length;
 
     const myRef = ref(window.rtdb, `matches/${matchId}/${myId}`);
