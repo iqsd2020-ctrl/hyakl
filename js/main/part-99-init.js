@@ -23,6 +23,7 @@ onAuthStateChanged(auth, async (user) => {
         setGuestSessionActive(false);
         currentUser = user;
         effectiveUserId = user.uid;
+        window.effectiveUserId = effectiveUserId;
 
         try {
             await ensureUserProfileExists(user);

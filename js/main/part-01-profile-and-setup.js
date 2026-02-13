@@ -16,6 +16,8 @@ async function loadProfile(uid) {
     userProfile = rawData; 
 }
 
+window.userProfile = userProfile;
+
 // ✅ توحيد الرصيد: balance هو الاسم الجديد (مع دعم legacy highScore)
         const b = Number(userProfile.balance);
         const hs = Number(userProfile.highScore);

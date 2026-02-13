@@ -166,7 +166,7 @@ async function sendInvite(questionCount) {
 
     const inviteData = {
         fromId: fromId,
-        fromName: window.userProfile.username,
+        fromName: window.userProfile?.username || window.auth?.currentUser?.displayName || 'لاعب',
         toId: toId,
         questionCount: questionCount,
         status: "pending",
@@ -263,7 +263,7 @@ async function acceptInvite(inviteId, invite) {
         player1Id: invite.fromId,
         player2Id: invite.toId,
         player1Name: invite.fromName,
-        player2Name: window.userProfile.username,
+        player2Name: window.userProfile?.username || window.auth?.currentUser?.displayName || 'لاعب',
         questionIds: questionIds,
         questionCount: invite.questionCount,
         status: "active",
