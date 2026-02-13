@@ -27,7 +27,9 @@ let challengeState = {
     opponentProgress: { answered: 0, correct: 0, lives: 3 },
     inviteTimer: null,
     matchUnsub: null,
-    rtdbUnsub: null
+    rtdbUnsub: null,
+    awaitingFinal: false,
+    finishLock: false
 };
 
 // --- Initialization ---
@@ -311,17 +313,8 @@ async function startMatch(matchId, matchData) {
     challengeState.myCorrect = 0;
     challengeState.myLives = 3;
     challengeState.opponentProgress = { answered: 0, correct: 0, lives: 3 };
-
-    document.getElementById('player-profile-modal')?.classList.remove('active');
-    const myId = window.effectiveUserId;
-    if (myId != null && matchData) {
-        challengeState.isHost = (myId === matchData.player1Id);
-        if (challengeState.isHost) {
-            challengeState.opponentData = { uid: matchData.player2Id, username: matchData.player2Name };
-        } else {
-            challengeState.opponentData = { uid: matchData.player1Id, username: matchData.player1Name };
-        }
-    }
+    challengeState.awaitingFinal = false;
+    challengeState.finishLock = false;
 
     // Load Questions
     challengeState.questions = await fetchQuestionsByIds(matchData.questionIds);
@@ -332,12 +325,11 @@ async function startMatch(matchId, matchData) {
     document.getElementById('challenge-match-view').classList.remove('hidden');
     
     // Setup RTDB Presence & Progress
-    setupMatchRealtime(matchData);
+    setupMatchRealtime();
     
     // Show first question
     showNextChallengeQuestion();
 }
-
 async function fetchQuestionsByIds(ids) {
     try {
         const response = await fetch('Data/Noor/dataNooR.json');
@@ -530,10 +522,19 @@ function checkMatchEndConditions() {
 }
 
 async function finishMatch(reason = "normal") {
-    if (challengeState.rtdbUnsub) challengeState.rtdbUnsub();
-    if (challengeState.matchUnsub) challengeState.matchUnsub();
-    
-    const myRef = ref(window.rtdb, `matches/${challengeState.currentMatchId}/${window.effectiveUserId}`);
+    if (challengeState.finishLock) return;
+    challengeState.finishLock = true;
+
+    if (challengeState.rtdbUnsub) {
+        challengeState.rtdbUnsub();
+        challengeState.rtdbUnsub = null;
+    }
+
+    const matchId = challengeState.currentMatchId;
+    const myId = window.effectiveUserId;
+    const total = challengeState.questions.length;
+
+    const myRef = ref(window.rtdb, `matches/${matchId}/${myId}`);
     set(myRef, {
         answered: challengeState.currentIdx,
         correct: challengeState.myCorrect,
@@ -541,15 +542,118 @@ async function finishMatch(reason = "normal") {
         status: "finished"
     });
 
-    // Wait a bit for final sync
-    setTimeout(async () => {
-        const matchSnap = await getDoc(doc(window.db, "challengeMatches", challengeState.currentMatchId));
-        const matchData = matchSnap.data();
-        
+    document.getElementById('challenge-match-view').classList.add('hidden');
+
+    const matchRef = doc(window.db, "challengeMatches", matchId);
+    const matchSnap = await getDoc(matchRef);
+    const matchData = matchSnap.data();
+    if (!matchData) {
+        challengeState.finishLock = false;
+        return;
+    }
+
+    const myIsP1 = (myId === matchData.player1Id);
+    const oppP = myIsP1 ? matchData.player2Progress : matchData.player1Progress;
+
+    const oppAnswered = oppP?.answered ?? 0;
+    const oppCorrect = oppP?.correct ?? 0;
+    const oppLives = oppP?.lives ?? 3;
+
+    challengeState.opponentProgress = { answered: oppAnswered, correct: oppCorrect, lives: oppLives };
+
+    const oppFinished = (oppAnswered >= total) || (oppLives <= 0);
+
+    if (reason !== "normal" || oppFinished) {
         showResult(reason, matchData);
-    }, 1000);
+        return;
+    }
+
+    showPendingFinal(matchData, challengeState.myCorrect, total, oppAnswered);
+
+    challengeState.awaitingFinal = true;
+    challengeState.matchUnsub = onSnapshot(matchRef, (snap) => {
+        const d = snap.data();
+        if (!d) return;
+        if (!challengeState.awaitingFinal) return;
+
+        const mineIsP1 = (myId === d.player1Id);
+        const myP = mineIsP1 ? d.player1Progress : d.player2Progress;
+        const opp = mineIsP1 ? d.player2Progress : d.player1Progress;
+
+        const myCorrect = myP?.correct ?? challengeState.myCorrect;
+        const oAnswered = opp?.answered ?? 0;
+        const oCorrect = opp?.correct ?? 0;
+        const oLives = opp?.lives ?? 3;
+
+        challengeState.opponentProgress = { answered: oAnswered, correct: oCorrect, lives: oLives };
+
+        const oFinished = (oAnswered >= total) || (oLives <= 0);
+        if (!oFinished) return;
+
+        challengeState.awaitingFinal = false;
+        if (challengeState.matchUnsub) {
+            challengeState.matchUnsub();
+            challengeState.matchUnsub = null;
+        }
+
+        showFinalAfterWait(d, myCorrect, oCorrect, total);
+    });
+}
+function showPendingFinal(matchData, myCorrect, total, oppAnswered) {
+    const modal = document.getElementById('challenge-result-modal');
+    const title = document.getElementById('challenge-result-title');
+    const reasonText = document.getElementById('challenge-result-reason');
+    const myRes = document.getElementById('my-final-result');
+    const oppRes = document.getElementById('opponent-final-result');
+
+    const oppName = challengeState.opponentData?.username || (challengeState.isHost ? matchData.player2Name : matchData.player1Name) || 'الخصم';
+
+    modal.classList.add('active');
+    title.textContent = "تم تسجيل نتيجتك";
+    reasonText.textContent = `الخصم لا يزال يلعب (${window.toArabicDigits(`${oppAnswered}/${total}`)}) • سنُعلمك بالنتيجة النهائية عند انتهائه`;
+
+    myRes.textContent = window.toArabicDigits(`${myCorrect}/${total}`);
+    oppRes.textContent = `—/${window.toArabicDigits(`${total}`)}`;
+
+    document.getElementById('btn-close-challenge-result').onclick = () => {
+        modal.classList.remove('active');
+    };
 }
 
+function showFinalAfterWait(matchData, myCorrect, oppCorrect, total) {
+    const modal = document.getElementById('challenge-result-modal');
+    const title = document.getElementById('challenge-result-title');
+    const reasonText = document.getElementById('challenge-result-reason');
+    const myRes = document.getElementById('my-final-result');
+    const oppRes = document.getElementById('opponent-final-result');
+
+    const oppName = challengeState.opponentData?.username || (challengeState.isHost ? matchData.player2Name : matchData.player1Name) || 'الخصم';
+
+    modal.classList.add('active');
+    title.textContent = `نتيجة جولتك مع ${oppName} كانت:`;
+
+    myRes.textContent = window.toArabicDigits(`${myCorrect}/${total}`);
+    oppRes.textContent = window.toArabicDigits(`${oppCorrect}/${total}`);
+
+    if (myCorrect > oppCorrect) {
+        reasonText.textContent = "أنت الفائز النهائي";
+    } else if (myCorrect < oppCorrect) {
+        reasonText.textContent = `${oppName} هو الفائز النهائي`;
+    } else {
+        reasonText.textContent = "تعادل";
+    }
+
+    document.getElementById('btn-close-challenge-result').onclick = () => {
+        modal.classList.remove('active');
+        if (challengeState.matchUnsub) {
+            challengeState.matchUnsub();
+            challengeState.matchUnsub = null;
+        }
+        challengeState.awaitingFinal = false;
+        challengeState.finishLock = false;
+        challengeState.currentMatchId = null;
+    };
+}
 function showResult(reason, matchData) {
     const modal = document.getElementById('challenge-result-modal');
     const title = document.getElementById('challenge-result-title');
@@ -591,7 +695,12 @@ function showResult(reason, matchData) {
 
     document.getElementById('btn-close-challenge-result').onclick = () => {
         modal.classList.remove('active');
-        // Cleanup
+        if (challengeState.matchUnsub) {
+            challengeState.matchUnsub();
+            challengeState.matchUnsub = null;
+        }
+        challengeState.awaitingFinal = false;
+        challengeState.finishLock = false;
         challengeState.currentMatchId = null;
     };
 }
