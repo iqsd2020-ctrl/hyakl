@@ -208,6 +208,8 @@ async function sendInvite(questionCount) {
     challengeState.currentInviteId = docRef.id;
     challengeState.isHost = true;
 
+    document.getElementById('settings-modal')?.classList.remove('active');
+
     showWaitingModal(questionCount);
     listenToInviteStatus(docRef.id);
 }
@@ -286,6 +288,7 @@ function listenToInviteStatus(inviteId) {
 async function acceptInvite(inviteId, invite) {
     await updateDoc(doc(window.db, "challengeInvites", inviteId), { status: "accepted" });
     document.getElementById('challenge-receive-modal')?.classList.remove('active');
+    document.getElementById('settings-modal')?.classList.remove('active');
 
     // Create Match Doc
     const questionIds = await pickRandomQuestions(invite.questionCount, invite.questionBank);
@@ -669,7 +672,7 @@ async function finishMatch(reason = "normal") {
 
     const oppFinished = (oppAnswered >= total) || (oppLives <= 0);
 
-    if (reason !== "normal" || oppFinished) {
+    if (reason === "opponent_disconnected" || reason === "quit" || oppFinished) {
         showResult(reason, matchData);
         return;
     }
@@ -687,6 +690,7 @@ async function finishMatch(reason = "normal") {
         const opp = mineIsP1 ? d.player2Progress : d.player1Progress;
 
         const myCorrect = myP?.correct ?? challengeState.myCorrect;
+        const myLives = myP?.lives ?? challengeState.myLives;
         const oAnswered = opp?.answered ?? 0;
         const oCorrect = opp?.correct ?? 0;
         const oLives = opp?.lives ?? 3;
@@ -702,7 +706,7 @@ async function finishMatch(reason = "normal") {
             challengeState.matchUnsub = null;
         }
 
-        showFinalAfterWait(d, myCorrect, oCorrect, total);
+        showFinalAfterWait(d, myCorrect, oCorrect, total, myLives, oLives);
     });
 }
 function showPendingFinal(matchData, myCorrect, total, oppAnswered) {
@@ -726,7 +730,7 @@ function showPendingFinal(matchData, myCorrect, total, oppAnswered) {
     };
 }
 
-function showFinalAfterWait(matchData, myCorrect, oppCorrect, total) {
+function showFinalAfterWait(matchData, myCorrect, oppCorrect, total, myLives, oppLives) {
     const modal = document.getElementById('challenge-result-modal');
     const title = document.getElementById('challenge-result-title');
     const reasonText = document.getElementById('challenge-result-reason');
@@ -735,18 +739,30 @@ function showFinalAfterWait(matchData, myCorrect, oppCorrect, total) {
 
     const oppName = challengeState.opponentData?.username || (challengeState.isHost ? matchData.player2Name : matchData.player1Name) || 'الخصم';
 
+    const mLives = (typeof myLives === 'number') ? myLives : challengeState.myLives;
+    const oLives = (typeof oppLives === 'number') ? oppLives : (challengeState.opponentProgress?.lives ?? 3);
+
     modal.classList.add('active');
-    title.textContent = `نتيجة جولتك مع ${oppName} كانت:`;
 
     myRes.textContent = window.toArabicDigits(`${myCorrect}/${total}`);
     oppRes.textContent = window.toArabicDigits(`${oppCorrect}/${total}`);
 
-    if (myCorrect > oppCorrect) {
-        reasonText.textContent = "أنت الفائز النهائي";
-    } else if (myCorrect < oppCorrect) {
-        reasonText.textContent = `${oppName} هو الفائز النهائي`;
+    if (mLives <= 0) {
+        title.textContent = "خسرت";
+        reasonText.textContent = "نفدت قلوبك!";
+    } else if (oLives <= 0) {
+        title.textContent = "فزت!";
+        reasonText.textContent = "نفدت قلوب الخصم!";
     } else {
-        reasonText.textContent = "تعادل";
+        title.textContent = `نتيجة جولتك مع ${oppName} كانت:`;
+
+        if (myCorrect > oppCorrect) {
+            reasonText.textContent = "أنت الفائز النهائي";
+        } else if (myCorrect < oppCorrect) {
+            reasonText.textContent = `${oppName} هو الفائز النهائي`;
+        } else {
+            reasonText.textContent = "تعادل";
+        }
     }
 
     document.getElementById('btn-close-challenge-result').onclick = () => {
