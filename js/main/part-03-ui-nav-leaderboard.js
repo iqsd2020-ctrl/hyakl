@@ -544,7 +544,7 @@ docs.forEach(doc => {
         // 1. تعيين الكلاسات الأساسية
         row.className = `leaderboard-row flex justify-between items-center p-4 mb-3 rounded-2xl border transition transform hover:scale-[1.01] cursor-pointer group relative`;
         row.classList.add('lb-row');
-        let medalHtml = `<span class="text-slate-500 font-mono font-bold text-sm w-6 text-center">#${formatNumberAr(r)}</span>`;
+        let medalHtml = `<span class="text-slate-500 font-mono font-bold text-sm w-6 text-center">${formatNumberAr(r)}</span>`;
 
         // 2. منطق الألوان (بدون inline)
         if (r <= 3) {
