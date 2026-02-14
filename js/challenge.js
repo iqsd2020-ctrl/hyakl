@@ -30,6 +30,7 @@ let challengeState = {
     matchRealtimeUnsub: null,
     rtdbUnsub: null,
     awaitingFinal: false,
+    selectedBank: "random_all",
     finishLock: false
 };
 
@@ -126,6 +127,27 @@ export function openChallengeSetup(opponentData) {
         }
     }
 
+    const bankBtns = document.querySelectorAll('.challenge-bank-btn');
+    const setActiveBank = (bank) => {
+        challengeState.selectedBank = bank;
+        bankBtns.forEach(b => {
+            if (b.getAttribute('data-bank') === bank) {
+                b.classList.add('border-orange-500/60', 'bg-slate-700');
+            } else {
+                b.classList.remove('border-orange-500/60', 'bg-slate-700');
+            }
+        });
+    };
+
+    setActiveBank("random_all");
+
+    bankBtns.forEach(btn => {
+        btn.onclick = () => {
+            const bank = btn.getAttribute('data-bank');
+            if (bank) setActiveBank(bank);
+        };
+    });
+
     const btns = document.querySelectorAll('.challenge-opt-btn');
     btns.forEach(btn => {
         btn.onclick = () => {
@@ -177,6 +199,7 @@ async function sendInvite(questionCount) {
         fromName: window.userProfile?.username || window.auth?.currentUser?.displayName || 'لاعب',
         toId: toId,
         questionCount: questionCount,
+        questionBank: challengeState.selectedBank || "random_all",
         status: "pending",
         createdAt: serverTimestamp()
     };
@@ -265,7 +288,7 @@ async function acceptInvite(inviteId, invite) {
     document.getElementById('challenge-receive-modal')?.classList.remove('active');
 
     // Create Match Doc
-    const questionIds = await pickRandomQuestions(invite.questionCount);
+    const questionIds = await pickRandomQuestions(invite.questionCount, invite.questionBank);
     const matchData = {
         inviteId: inviteId,
         player1Id: invite.fromId,
@@ -284,23 +307,69 @@ async function acceptInvite(inviteId, invite) {
     startMatch(matchRef.id, matchData);
 }
 
-async function pickRandomQuestions(count) {
-    try {
-        // Try to fetch from the standard path
-        const response = await fetch('Data/Noor/dataNooR.json');
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        const allQuestions = Array.isArray(data) ? data : (data.questions || []);
-        
-        if (allQuestions.length === 0) throw new Error('No questions found');
+const challengeBankDefs = {
+    aqida_fiqh: { path: 'Data/Noor/aqida_fiqh.json', type: 'mcq' },
+    dataNooR: { path: 'Data/Noor/dataNooR.json', type: 'mcq' },
+    dua_ziyarat: { path: 'Data/Noor/dua_ziyarat.json', type: 'mcq' },
+    general_info: { path: 'Data/Noor/general_info.json', type: 'mcq' },
+    history_battles: { path: 'Data/Noor/history_battles.json', type: 'mcq' },
+    infallibles_all: { path: 'Data/Noor/infallibles_all.json', type: 'mcq' },
+    mahdi_culture: { path: 'Data/Noor/mahdi_culture.json', type: 'mcq' },
+    personalities: { path: 'Data/Noor/personalities.json', type: 'mcq' },
+    prophets: { path: 'Data/Noor/prophets.json', type: 'mcq' },
+    quran_nahj: { path: 'Data/Noor/quran_nahj.json', type: 'mcq' },
+    truefalse: { path: 'Data/Noor/truefalse.json', type: 'tf' }
+};
 
-        const indices = Array.from({length: allQuestions.length}, (_, i) => i);
-        const shuffled = indices.sort(() => 0.5 - Math.random());
-        
+const challengeBankCache = {};
+
+async function loadChallengeBank(bankKey) {
+    if (challengeBankCache[bankKey]) return challengeBankCache[bankKey];
+    const def = challengeBankDefs[bankKey];
+    if (!def) throw new Error('Unknown bank');
+    const response = await fetch(def.path);
+    if (!response.ok) throw new Error('Network response was not ok');
+    const data = await response.json();
+    const all = Array.isArray(data) ? data : (data.questions || []);
+    challengeBankCache[bankKey] = all;
+    return all;
+}
+
+async function pickRandomQuestions(count, selection) {
+    try {
+        const sel = selection || "dataNooR";
+        const banks =
+            sel === "random_all" ? Object.keys(challengeBankDefs) :
+            sel === "general_info" ? ["general_info"] :
+            sel === "dataNooR" ? ["dataNooR"] :
+            sel === "truefalse" ? ["truefalse"] :
+            ["dataNooR"];
+
+        if (banks.length === 1) {
+            const bankKey = banks[0];
+            const allQuestions = await loadChallengeBank(bankKey);
+            if (allQuestions.length === 0) throw new Error('No questions found');
+
+            const indices = Array.from({length: allQuestions.length}, (_, i) => i);
+            const shuffled = indices.sort(() => 0.5 - Math.random());
+
+            return shuffled.slice(0, count).map(idx => ({ bank: bankKey, idx }));
+        }
+
+        const refs = [];
+        for (const bankKey of banks) {
+            const allQuestions = await loadChallengeBank(bankKey);
+            for (let i = 0; i < allQuestions.length; i++) {
+                refs.push({ bank: bankKey, idx: i });
+            }
+        }
+
+        if (refs.length === 0) throw new Error('No questions found');
+
+        const shuffled = refs.sort(() => 0.5 - Math.random());
         return shuffled.slice(0, count);
     } catch (e) {
         console.error("Failed to pick questions, using fallback indices", e);
-        // Fallback to indices 0 to count-1
         return Array.from({length: count}, (_, i) => i);
     }
 }
@@ -337,23 +406,44 @@ document.getElementById('player-profile-modal')?.classList.remove('active');
 }
 async function fetchQuestionsByIds(ids) {
     try {
-        const response = await fetch('Data/Noor/dataNooR.json');
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data = await response.json();
-        const all = Array.isArray(data) ? data : (data.questions || []);
-        
-        if (all.length === 0) throw new Error('No questions found');
+        const result = [];
 
-        return ids.map(id => {
-            const idx = parseInt(id);
-            if (!isNaN(idx)) {
-                return all[idx % all.length];
+        for (const id of ids) {
+            if (id && typeof id === 'object' && id.bank) {
+                const bankKey = id.bank;
+                const all = await loadChallengeBank(bankKey);
+                if (all.length === 0) throw new Error('No questions found');
+
+                const idx = parseInt(id.idx);
+                const item = !isNaN(idx) ? all[idx % all.length] : all[Math.floor(Math.random() * all.length)];
+
+                if (challengeBankDefs[bankKey]?.type === 'tf') {
+                    result.push({
+                        question: item.q ?? item.question ?? "",
+                        options: ["صح", "خطأ"],
+                        correctAnswer: item.a ? 0 : 1,
+                        topic: "صح وخطأ"
+                    });
+                } else {
+                    result.push(item);
+                }
+                continue;
             }
-            return all.find(q => q.id === id) || all[Math.floor(Math.random() * all.length)];
-        });
+
+            const idx = parseInt(id);
+            const all = await loadChallengeBank('dataNooR');
+            if (all.length === 0) throw new Error('No questions found');
+
+            if (!isNaN(idx)) {
+                result.push(all[idx % all.length]);
+            } else {
+                result.push(all.find(q => q.id === id) || all[Math.floor(Math.random() * all.length)]);
+            }
+        }
+
+        return result;
     } catch (e) {
         console.error("Error fetching questions by IDs", e);
-        // Return dummy questions if fetch fails
         return ids.map((_, i) => ({
             question: "تعذر تحميل السؤال، يرجى التحقق من الاتصال",
             options: ["خيار 1", "خيار 2", "خيار 3", "خيار 4"],
@@ -455,9 +545,11 @@ function showNextChallengeQuestion() {
 
     const q = challengeState.questions[challengeState.currentIdx];
     const textEl = document.getElementById('challenge-question-text');
+    const topicEl = document.getElementById('challenge-question-topic');
     const optionsContainer = document.getElementById('challenge-options-container');
     
     textEl.textContent = q.question;
+    if (topicEl) topicEl.textContent = q.topic || "";
     optionsContainer.innerHTML = '';
 
     q.options.forEach((opt, i) => {
