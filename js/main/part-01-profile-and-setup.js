@@ -620,7 +620,7 @@ async function handleSealedTopic(topicName, allTopicQuestions) {
             window.showConfirm(
                 "فك الختم",
                 "هل تريد دفع 12,000 نقطة لإعادة فتح هذا الملف الآن؟",
-                "lock_open",
+                "key",
                 async () => {
                     await unlockTopicLogic(topicName, allTopicQuestions, 12000);
                 }
@@ -849,7 +849,7 @@ bind('quit-quiz-btn', 'click', () => {
     window.showConfirm(
         "مغادرة المسابقة",
         "هل تريد الانسحاب؟ سيتم احتساب النقاط والإجابات الصحيحة الحالية.",
-        "save_as",
+        "save",
         async () => {
             // Guest Mode: حفظ محلي فقط (بدون Firestore)
             if (isGuestMode()) {

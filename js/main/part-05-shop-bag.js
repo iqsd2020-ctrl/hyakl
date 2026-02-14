@@ -234,7 +234,7 @@ window.buyShopItem = async function(type, cost, id=null) {
     window.showConfirm(
         "تأكيد الشراء", 
         `هل تريد دفع ${cost} نقطة؟`, 
-        "shopping_cart", 
+        "key", 
         async () => {
             const prevBalance = Number(userProfile.balance ?? userProfile.highScore ?? 0);
             userProfile.balance = Math.max(0, prevBalance - cost);

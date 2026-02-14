@@ -195,7 +195,7 @@ const TF_UNLOCK_COST = 10000;
           window.showConfirm(
             "فك الختم",
             "هل تريد دفع 10,000 نقطة لإعادة فتح (صح/خطأ) الآن؟",
-            "lock_open",
+            "key",
             () => {
               unlockTrueFalseNow(TF_UNLOCK_COST);
               startTrueFalseRound(countSelToStart);

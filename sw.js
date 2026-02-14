@@ -26,10 +26,6 @@ const CONFIG = {
     "./fonts/Amiri/Amiri-Italic.ttf",
     "./fonts/Amiri/Amiri-Bold.ttf",
     "./fonts/Amiri/Amiri-BoldItalic.ttf",
-    "./fonts/ReemKufi/static/ReemKufi-Regular.ttf",
-    "./fonts/ReemKufi/static/ReemKufi-Medium.ttf",
-    "./fonts/ReemKufi/static/ReemKufi-SemiBold.ttf",
-    "./fonts/ReemKufi/static/ReemKufi-Bold.ttf",
     "./fonts/MaterialSymbolsRounded.woff2",
     "./Icon.png",
   ],
@@ -40,7 +36,7 @@ const RUNTIME = `${CACHE_PREFIX}-runtime-${CONFIG.version}`;
 const FONT_CACHE = `${CACHE_PREFIX}-fonts-${CONFIG.version}`;
 const OFFLINE_FALLBACK_URL = new URL("./index.html", self.registration.scope).href;
 function isHttpUrl(u) {
-  return /^https?:\/\//i.haykl(u);
+  return /^https?:\/\//i.test(u);
 }
 function isGoogleFonts(url) {
   return (

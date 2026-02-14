@@ -27,37 +27,9 @@
   font-display: swap;
 }
 @font-face {
-  font-family: "Reem Kufi";
-  src: url("./fonts/ReemKufi/static/ReemKufi-Regular.ttf") format("truetype");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Reem Kufi";
-  src: url("./fonts/ReemKufi/static/ReemKufi-Medium.ttf") format("truetype");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Reem Kufi";
-  src: url("./fonts/ReemKufi/static/ReemKufi-SemiBold.ttf") format("truetype");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Reem Kufi";
-  src: url("./fonts/ReemKufi/static/ReemKufi-Bold.ttf") format("truetype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
   font-family: "Material Symbols Rounded";
   font-style: normal;
-  font-weight: 400;
+  font-weight: 400 500;
   src: url("./fonts/MaterialSymbolsRounded.woff2") format("woff2");
   font-display: block;
 }
