@@ -1702,12 +1702,19 @@
 <div id="challenge-setup-modal" class="modal-overlay">
     <div class="modal-box border-2 border-orange-500/50 bg-[#0f172a]">
         <h3 class="text-2xl font-bold text-white mb-4 font-heading text-center">إعداد التحدي</h3>
+        <p class="text-slate-300 text-center mb-3">اختر نوع الأسئلة:</p>
+        <div class="grid grid-cols-2 gap-3 mb-6">
+            <button class="challenge-bank-btn bg-slate-800 text-white py-3 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-base" data-bank="random_all">عشوائي شامل</button>
+            <button class="challenge-bank-btn bg-slate-800 text-white py-3 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-base" data-bank="general_info">معلومات عامة</button>
+            <button class="challenge-bank-btn bg-slate-800 text-white py-3 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-base" data-bank="dataNooR">أكمل النور</button>
+            <button class="challenge-bank-btn bg-slate-800 text-white py-3 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-base" data-bank="truefalse">صح وخطأ</button>
+        </div>
         <p class="text-slate-300 text-center mb-6">اختر عدد الأسئلة للجولة:</p>
         <div class="grid grid-cols-2 gap-3 mb-6">
-            <button class="challenge-opt-btn bg-slate-800 text-white py-4 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-xl" data-count="5">5</button>
             <button class="challenge-opt-btn bg-slate-800 text-white py-4 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-xl" data-count="10">10</button>
             <button class="challenge-opt-btn bg-slate-800 text-white py-4 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-xl" data-count="15">15</button>
             <button class="challenge-opt-btn bg-slate-800 text-white py-4 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-xl" data-count="20">20</button>
+            <button class="challenge-opt-btn bg-slate-800 text-white py-4 rounded-xl border border-slate-700 hover:border-orange-500/40 hover:bg-slate-700 transition font-heading text-xl" data-count="30">30</button>
         </div>
         <button class="close-modal w-full text-slate-500 hover:text-white text-sm transition">إلغاء</button>
     </div>
@@ -1789,7 +1796,8 @@
 
     <!-- منطقة السؤال (سنستخدم نفس هيكل quiz-proper برمجياً أو نعيد استخدامه) -->
     <div id="challenge-quiz-area" class="flex-1 overflow-y-auto p-4 flex flex-col justify-center">
-        <div id="challenge-question-container" class="bg-slate-800/40 border border-white/5 rounded-3xl p-6 mb-6 min-h-[150px] flex items-center justify-center text-center">
+        <div id="challenge-question-container" class="bg-slate-800/40 border border-white/5 rounded-3xl p-6 mb-6 min-h-[150px] flex items-center justify-center text-center relative">
+            <div id="challenge-question-topic" class="absolute top-3 right-4 left-4 text-[11px] text-slate-400 font-bold"></div>
             <p id="challenge-question-text" class="text-xl font-bold text-white leading-relaxed"></p>
         </div>
         <div id="challenge-options-container" class="space-y-3">
