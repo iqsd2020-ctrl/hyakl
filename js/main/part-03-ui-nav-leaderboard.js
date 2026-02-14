@@ -544,7 +544,7 @@ docs.forEach(doc => {
         // 1. تعيين الكلاسات الأساسية
         row.className = `leaderboard-row flex justify-between items-center p-4 mb-3 rounded-2xl border transition transform hover:scale-[1.01] cursor-pointer group relative`;
         row.classList.add('lb-row');
-        let medalHtml = `<span class="text-slate-500 font-mono font-bold text-sm w-6 text-center">${formatNumberAr(r)}</span>`;
+        let medalHtml = ``;
 
         // 2. منطق الألوان (بدون inline)
         if (r <= 3) {
@@ -553,17 +553,17 @@ docs.forEach(doc => {
 
             if (r === 1) {
                 // الأول
-                medalHtml = '<span class="material-symbols-rounded text-amber-400">emoji_events</span>'; 
+                medalHtml = ''; 
                 row.classList.add('lb-rank-1');
             } 
             else if (r === 2) {
                 // الثاني
-                medalHtml = '<span class="material-symbols-rounded text-slate-300">military_tech</span>';
+                medalHtml = '';
                 row.classList.add('lb-rank-2');
             }
             else if (r === 3) {
                 // الثالث
-                medalHtml = '<span class="material-symbols-rounded text-orange-700">military_tech</span>';
+                medalHtml = '';
                 row.classList.add('lb-rank-3');
             }
 
@@ -609,7 +609,18 @@ docs.forEach(doc => {
 function showPlayerProfile(data) {
     // 1. تحديث البيانات الأساسية (الاسم والنقاط)
     getEl('popup-player-name').textContent = data.username;
-    getEl('popup-player-score').textContent = `${formatNumberAr(Number(data.balance ?? data.highScore ?? 0))} نقطة`;
+
+    const totalCorrect = (data && data.stats) ? data.stats.totalCorrect : 0;
+    const p = (typeof computePlayerLevelProgress === 'function') ? computePlayerLevelProgress(totalCorrect) : { level: 1, percent: 0, remaining: 0 };
+    const fmt = (n) => (typeof formatNumberAr === 'function') ? formatNumberAr(n) : String(n);
+
+    const lvlEl = getEl('popup-player-level-number');
+    const fillEl = getEl('popup-player-level-progress-fill');
+    const txtEl = getEl('popup-player-level-progress-text');
+
+    if (lvlEl) lvlEl.textContent = fmt(p.level);
+    if (fillEl) fillEl.style.width = `${p.percent}%`;
+    if (txtEl) txtEl.textContent = `%${fmt(p.percent)} • المتبقي: ${fmt(p.remaining)}`;
 
     // 2. تحديث صورة الأفاتار
     if (data.customAvatar) {

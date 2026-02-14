@@ -867,7 +867,7 @@ function addLocalNotification(title, body, icon='info') {
     playSound('click'); // صوت خفيف للتنبيه
 }
 // دالة الاشعارات
-function updateNotifUI(){const list=JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');const badge=document.getElementById('notif-badge');const container=document.getElementById('notif-list');const unread=list.filter(n=>!n.read).length;if(unread>0){badge.classList.remove('hidden');badge.classList.add('pulse-red')}else{badge.classList.add('hidden');badge.classList.remove('pulse-red')}container.innerHTML='';if(list.length===0){container.innerHTML='<p class="text-center text-slate-500 text-xs py-6">لا توجد إشعارات</p>';return}const tpl=document.getElementById('notif-template');list.forEach(n=>{const clone=tpl.content.cloneNode(true);const item=clone.querySelector('.notif-item');const icon=clone.querySelector('.notif-icon');clone.querySelector('.notif-title').textContent=n.title;clone.querySelector('.notif-body').textContent=n.body;clone.querySelector('.notif-date').textContent=`${n.date} - ${n.time}`;icon.textContent=n.icon;let c='text-slate-400';if(n.icon==='emoji_events')c='text-amber-400';else if(n.icon==='monetization_on')c='text-green-400';else if(n.icon==='lock_reset')c='text-red-400';icon.classList.add(c);if(n.read){item.classList.add('opacity-70','border-transparent')}else{item.classList.add('bg-slate-800/30','border-amber-500')}container.appendChild(clone)})}
+function updateNotifUI(){const list=JSON.parse(localStorage.getItem(NOTIF_KEY)||'[]');const badge=document.getElementById('notif-badge');const bottomBadge=document.getElementById('bottom-notif-badge');const container=document.getElementById('notif-list');const unread=list.filter(n=>!n.read).length;if(unread>0){badge.classList.remove('hidden');badge.classList.add('pulse-red');if(bottomBadge){bottomBadge.classList.remove('hidden');bottomBadge.classList.add('pulse-red')}}else{badge.classList.add('hidden');badge.classList.remove('pulse-red');if(bottomBadge){bottomBadge.classList.add('hidden');bottomBadge.classList.remove('pulse-red')}}container.innerHTML='';if(list.length===0){container.innerHTML='<p class="text-center text-slate-500 text-xs py-6">لا توجد إشعارات</p>';return}const tpl=document.getElementById('notif-template');list.forEach(n=>{const clone=tpl.content.cloneNode(true);const item=clone.querySelector('.notif-item');const icon=clone.querySelector('.notif-icon');clone.querySelector('.notif-title').textContent=n.title;clone.querySelector('.notif-body').textContent=n.body;clone.querySelector('.notif-date').textContent=`${n.date} - ${n.time}`;icon.textContent=n.icon;let c='text-slate-400';if(n.icon==='emoji_events')c='text-amber-400';else if(n.icon==='monetization_on')c='text-green-400';else if(n.icon==='lock_reset')c='text-red-400';icon.classList.add(c);if(n.read){item.classList.add('opacity-70','border-transparent')}else{item.classList.add('bg-slate-800/30','border-amber-500')}container.appendChild(clone)})}
 
 
 // فتح/غلق القائمة
@@ -889,8 +889,7 @@ bind('notif-btn', 'click', (e) => {
             list.forEach(n => n.read = true);
             localStorage.setItem(NOTIF_KEY, JSON.stringify(list));
             // نحدث الواجهة فوراً لإزالة النقطة الحمراء
-            document.getElementById('notif-badge').classList.add('hidden');
-            document.getElementById('notif-badge').classList.remove('pulse-red');
+            updateNotifUI();
         }
     } else {
         dropdown.classList.add('hidden');

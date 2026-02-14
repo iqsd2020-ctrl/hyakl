@@ -6,7 +6,7 @@
 import { 
     collection, doc, setDoc, getDoc, updateDoc, addDoc, 
     query, where, onSnapshot, serverTimestamp, deleteDoc,
-    limit, orderBy
+    limit, orderBy, runTransaction
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 import { 
@@ -79,8 +79,13 @@ function showIncomingInvite(inviteId, invite) {
     const modal = document.getElementById('challenge-receive-modal');
     const text = document.getElementById('challenge-receive-text');
     const timerSpan = document.getElementById('receive-timer');
+    const avatarBox = document.getElementById('challenge-receive-avatar');
     
     if (!modal || !text) return;
+
+    if (avatarBox && invite.fromAvatar && typeof window.getAvatarHTML === 'function') {
+        avatarBox.innerHTML = window.getAvatarHTML(invite.fromAvatar, invite.fromFrame || 'default', "w-full h-full");
+    }
 
     text.textContent = `${invite.fromName} يتحداك بـ ${window.toArabicDigits(invite.questionCount)} أسئلة!`;
     modal.classList.add('active');
@@ -197,6 +202,8 @@ async function sendInvite(questionCount) {
     const inviteData = {
         fromId: fromId,
         fromName: window.userProfile?.username || window.auth?.currentUser?.displayName || 'لاعب',
+        fromAvatar: window.userProfile?.customAvatar || window.auth?.currentUser?.photoURL || '',
+        fromFrame: window.userProfile?.equippedFrame || 'default',
         toId: toId,
         questionCount: questionCount,
         questionBank: challengeState.selectedBank || "random_all",
@@ -765,6 +772,14 @@ function showFinalAfterWait(matchData, myCorrect, oppCorrect, total, myLives, op
         }
     }
 
+    settleChallengePoints("normal");
+
+    try {
+        const oppName = challengeState.opponentData?.username || 'الخصم';
+        const body = `${title.textContent} ضد ${oppName} • ${window.toArabicDigits(`${myCorrect}/${total}`)} - ${window.toArabicDigits(`${oppCorrect}/${total}`)} • ${reasonText.textContent}`;
+        if (typeof window.addLocalNotification === 'function') window.addLocalNotification('نتيجة تحدي صديق', body, 'swords');
+    } catch (_) {}
+
     document.getElementById('btn-close-challenge-result').onclick = () => {
         modal.classList.remove('active');
         if (challengeState.matchUnsub) {
@@ -815,6 +830,14 @@ function showResult(reason, matchData) {
         }
     }
 
+    settleChallengePoints(reason);
+
+    try {
+        const oppName = challengeState.opponentData?.username || (challengeState.isHost ? matchData.player2Name : matchData.player1Name) || 'الخصم';
+        const body = `${title.textContent} ضد ${oppName} • النتيجة: ${window.toArabicDigits(`${myCorrect}/${total}`)} مقابل ${window.toArabicDigits(`${oppCorrect}/${total}`)} • ${reasonText.textContent}`;
+        if (typeof window.addLocalNotification === 'function') window.addLocalNotification('نتيجة تحدي صديق', body, 'swords');
+    } catch (_) {}
+
     document.getElementById('btn-close-challenge-result').onclick = () => {
         modal.classList.remove('active');
         if (challengeState.matchUnsub) {
@@ -825,6 +848,120 @@ function showResult(reason, matchData) {
         challengeState.finishLock = false;
         challengeState.currentMatchId = null;
     };
+}
+
+async function settleChallengePoints(reason = "normal") {
+    try {
+        if (!window.db) return;
+        const matchId = challengeState.currentMatchId;
+        if (!matchId) return;
+
+        const myId =
+            window.effectiveUserId ??
+            window.auth?.currentUser?.uid ??
+            window.firebaseAuth?.currentUser?.uid ??
+            window.user?.uid;
+
+        if (!myId) return;
+        window.effectiveUserId = myId;
+
+        const matchRef = doc(window.db, "challengeMatches", matchId);
+
+        await runTransaction(window.db, async (tx) => {
+            const mSnap = await tx.get(matchRef);
+            if (!mSnap.exists()) return;
+
+            const m = mSnap.data() || {};
+            if (m.pointsSettled === true) return;
+
+            const p1Id = m.player1Id;
+            const p2Id = m.player2Id;
+
+            const p1 = m.player1Progress || {};
+            const p2 = m.player2Progress || {};
+
+            const p1Lives = (typeof p1.lives === 'number') ? p1.lives : 3;
+            const p2Lives = (typeof p2.lives === 'number') ? p2.lives : 3;
+
+            const p1Correct = (typeof p1.correct === 'number') ? p1.correct : 0;
+            const p2Correct = (typeof p2.correct === 'number') ? p2.correct : 0;
+
+            let winnerId = null;
+            let loserId = null;
+
+            if (p1Id && p2Id) {
+                if (reason === "quit") {
+                    loserId = myId;
+                    winnerId = (myId === p1Id) ? p2Id : p1Id;
+                } else if (reason === "opponent_disconnected") {
+                    winnerId = myId;
+                    loserId = (myId === p1Id) ? p2Id : p1Id;
+                } else {
+                    if (p1Lives <= 0 && p2Lives > 0) {
+                        winnerId = p2Id;
+                        loserId = p1Id;
+                    } else if (p2Lives <= 0 && p1Lives > 0) {
+                        winnerId = p1Id;
+                        loserId = p2Id;
+                    } else if (p1Correct > p2Correct) {
+                        winnerId = p1Id;
+                        loserId = p2Id;
+                    } else if (p2Correct > p1Correct) {
+                        winnerId = p2Id;
+                        loserId = p1Id;
+                    }
+                }
+            }
+
+            let amount = 0;
+
+            if (winnerId && loserId) {
+                const winnerRef = doc(window.db, "users", winnerId);
+                const loserRef = doc(window.db, "users", loserId);
+
+                const wSnap = await tx.get(winnerRef);
+                const lSnap = await tx.get(loserRef);
+
+                const wData = wSnap.exists() ? (wSnap.data() || {}) : {};
+                const lData = lSnap.exists() ? (lSnap.data() || {}) : {};
+
+                const wBal = Number(wData.balance ?? wData.highScore ?? 0) || 0;
+                const lBal = Number(lData.balance ?? lData.highScore ?? 0) || 0;
+
+                amount = Math.max(0, Math.min(100, lBal));
+
+                if (amount > 0) {
+                    const newW = wBal + amount;
+                    const newL = lBal - amount;
+                    tx.set(winnerRef, { balance: newW, highScore: newW }, { merge: true });
+                    tx.set(loserRef, { balance: newL, highScore: newL }, { merge: true });
+                }
+            }
+
+            tx.update(matchRef, {
+                pointsSettled: true,
+                pointsSettledAt: serverTimestamp(),
+                pointsSettledAmount: amount,
+                pointsWinnerId: winnerId,
+                pointsLoserId: loserId,
+                pointsSettledReason: reason
+            });
+        });
+
+        if (window.userProfile) {
+            const myRef = doc(window.db, "users", myId);
+            const mySnap = await getDoc(myRef);
+            if (mySnap.exists()) {
+                const d = mySnap.data() || {};
+                const b = Number(d.balance ?? d.highScore ?? 0) || 0;
+                window.userProfile.balance = b;
+                window.userProfile.highScore = b;
+                if (typeof window.updateProfileUI === 'function') window.updateProfileUI();
+            }
+        }
+    } catch (e) {
+        console.error(e);
+    }
 }
 
 // Quit handler
