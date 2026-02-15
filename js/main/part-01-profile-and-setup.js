@@ -675,10 +675,12 @@ async function unlockTopicLogic(topicName, allTopicQuestions, cost) {
         scheduleGuestSave(true);
 
         if (cost > 0) {
-            toast(`🔓 تم فتح "${topicName}" بنجاح!`, "success");
+            toast(` تم فتح "${topicName}" بنجاح!`, "success");
             if(window.playSound) window.playSound('win');
+            if (typeof window.addLocalNotification === 'function') window.addLocalNotification('فتح ختم بعد دفع النقاط', `تم فتح "${topicName}" بعد دفع ${typeof window.toArabicDigits === 'function' ? window.toArabicDigits(cost) : cost} نقطة.`, 'key');
         } else {
-            toast(`⏳ انتهت فترة الانتظار! تم فتح "${topicName}" مجاناً.`, "success");
+            toast(` انتهت فترة الانتظار! تم فتح "${topicName}" مجاناً.`, "success");
+            if (typeof window.addLocalNotification === 'function') window.addLocalNotification('فتح ختم بانتهاء المدة', `تم فتح "${topicName}" مجاناً بعد انتهاء مدة الانتظار.`, 'lock_open');
         }
 
         document.getElementById('ai-generate-btn').click();
@@ -696,12 +698,14 @@ async function unlockTopicLogic(topicName, allTopicQuestions, cost) {
         updateProfileUI(); // تحديث الرصيد في الواجهة
 
         if (cost > 0) {
-            toast(`🔓 تم فتح "${topicName}" بنجاح!`, "success");
+            toast(` تم فتح "${topicName}" بنجاح!`, "success");
             if(window.playSound) window.playSound('win');
+            if (typeof window.addLocalNotification === 'function') window.addLocalNotification('فتح ختم بعد دفع النقاط', `تم فتح "${topicName}" بعد دفع ${typeof window.toArabicDigits === 'function' ? window.toArabicDigits(cost) : cost} نقطة.`, 'key');
             // تشغيل اللعبة مباشرة
             document.getElementById('ai-generate-btn').click(); 
         } else {
-            toast(`⏳ انتهت فترة الانتظار! تم فتح "${topicName}" مجاناً.`, "success");
+            toast(` انتهت فترة الانتظار! تم فتح "${topicName}" مجاناً.`, "success");
+            if (typeof window.addLocalNotification === 'function') window.addLocalNotification('فتح ختم بانتهاء المدة', `تم فتح "${topicName}" مجاناً بعد انتهاء مدة الانتظار.`, 'lock_open');
             document.getElementById('ai-generate-btn').click();
         }
 
@@ -813,6 +817,7 @@ const count = countValue === 'all' ? 'all' : parseInt(countValue);
     quizState.questions = freshQuestions;
     toast(`تبقى لديك ${freshQuestions.length} أسئلة جديدة فقط في هذا القسم!`, "info");
 }
+        quizState.sectionCompleteOnFinish = (quizState.questions.length === freshQuestions.length);
         if (quizState.questions.length === 0) {
             toast("حدث خطأ غير متوقع في تجهيز الأسئلة.", "error");
             resetButton();

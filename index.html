@@ -1420,13 +1420,24 @@
             const btnUpdateNow = document.getElementById('btn-update-now');
             const btnUpdateLater = document.getElementById('btn-update-later');
             let refreshing = false;
+            let updateNotified = false;
 
-            function showUpdateModal() { if (updateModal) updateModal.classList.add('active'); }
+            function notifyUpdateAvailable() {
+                if (updateNotified) return;
+                updateNotified = true;
+                if (typeof window.addLocalNotification === 'function') window.addLocalNotification('تحديث التطبيق', 'تتوفر نسخة جديدة. اضغط "تحديث الآن" لتطبيقها.', 'system_update');
+            }
+
+            function showUpdateModal() { if (updateModal) updateModal.classList.add('active'); notifyUpdateAvailable(); }
             function hideUpdateModal() { if (updateModal) updateModal.classList.remove('active'); }
 
             navigator.serviceWorker.register('./sw.js')
                 .then(registration => {
                     console.log('SW Registered:', registration.scope);
+                    if (!localStorage.getItem('sw_install_notif_v1') && typeof window.addLocalNotification === 'function') {
+                        localStorage.setItem('sw_install_notif_v1', '1');
+                        window.addLocalNotification('تثبيت عامل الخدمة', 'تم تثبيت sw.js بنجاح.', 'cloud_done');
+                    }
 
                     if (btnUpdateLater) btnUpdateLater.addEventListener('click', hideUpdateModal);
                     if (btnUpdateNow) btnUpdateNow.addEventListener('click', () => {
@@ -1456,7 +1467,13 @@
                         });
                     });
                 })
-                .catch(err => console.log('SW Registration Failed:', err));
+                .catch(err => {
+                    console.log('SW Registration Failed:', err);
+                    if (!localStorage.getItem('sw_install_fail_notif_v1') && typeof window.addLocalNotification === 'function') {
+                        localStorage.setItem('sw_install_fail_notif_v1', '1');
+                        window.addLocalNotification('فشل تثبيت عناصر التطبيق حاول حذف التطبيق وإعادة تثبيته.', 'cloud_off');
+                    }
+                });
         });
     }
 </script>
@@ -1624,6 +1641,7 @@
                         اسم اللاعب
                     </span>
                 </div>
+                <span class="player-title hidden text-[10px] font-bold leading-none mt-0.5"></span>
                 <div class="player-status flex items-center gap-1.5 mt-1">
                     <span class="status-dot w-2 h-2 rounded-full inline-block"></span>
                     <span class="status-text text-[9px] opacity-80 leading-none pt-0.5"></span>

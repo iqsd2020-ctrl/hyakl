@@ -503,6 +503,9 @@ async function endQuiz() {
         }, 700);
 
         addLocalNotification('نهاية جولة', `أتممت جولة في "${quizState.contextTopic}". النتيجة: ${quizState.score} نقطة.`, 'key');
+        if (quizState.sectionCompleteOnFinish && playedIds.length === quizState.questions.length && quizState.contextTopic && quizState.contextTopic !== 'عام' && quizState.contextTopic !== 'مراجعة الأخطاء') {
+            addLocalNotification('إكمال قسم بالكامل', `أكملت جميع أسئلة قسم "${quizState.contextTopic}".`, 'task_alt');
+        }
         renderReviewArea();
 
         // رسالة التشجيع على التسجيل
@@ -596,6 +599,9 @@ async function endQuiz() {
     }
 
     addLocalNotification('نهاية جولة', `أتممت جولة في "${quizState.contextTopic}". النتيجة: ${quizState.score} نقطة.`, 'key');
+    if (quizState.sectionCompleteOnFinish && playedIds.length === quizState.questions.length && quizState.contextTopic && quizState.contextTopic !== 'عام' && quizState.contextTopic !== 'مراجعة الأخطاء') {
+        addLocalNotification('إكمال قسم بالكامل', `أكملت جميع أسئلة قسم "${quizState.contextTopic}".`, 'task_alt');
+    }
     renderReviewArea();
 }
 

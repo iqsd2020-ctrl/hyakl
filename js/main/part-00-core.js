@@ -265,6 +265,7 @@ function getDefaultGuestProfile() {
         avatar: 'account_circle',
         customAvatar: null,
         equippedFrame: 'default',
+        equippedTitleBadge: '',
         badges: ['beginner'],
         favorites: [],
         seenQuestions: [],
@@ -438,6 +439,7 @@ function mergeGuestIntoRemoteProfile(remote, guest) {
     // 5) الأفاتار والإطار: لا نستبدل ما لدى الحساب إلا إذا كان فارغاً
     if (!merged.customAvatar && gClean.customAvatar) merged.customAvatar = gClean.customAvatar;
     if (!merged.equippedFrame && gClean.equippedFrame) merged.equippedFrame = gClean.equippedFrame;
+    if (!merged.equippedTitleBadge && gClean.equippedTitleBadge) merged.equippedTitleBadge = gClean.equippedTitleBadge;
 
     // 6) weekly/monthly: إذا نفس المفتاح نجمع، وإلا نحتفظ بما لدى الحساب
     if (rClean.weeklyStats && gClean.weeklyStats && rClean.weeklyStats.key && gClean.weeklyStats.key && rClean.weeklyStats.key === gClean.weeklyStats.key) {
@@ -489,6 +491,7 @@ async function syncGuestIfPending(user) {
             stats: merged.stats,
             inventory: merged.inventory,
             equippedFrame: merged.equippedFrame || 'default',
+            equippedTitleBadge: merged.equippedTitleBadge || '',
             customAvatar: merged.customAvatar || null,
             weeklyStats: merged.weeklyStats || deleteField(),
             monthlyStats: merged.monthlyStats || deleteField(),

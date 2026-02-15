@@ -470,11 +470,17 @@ export function updateQuestProgress(questId, amount = 1) {
   // 3. إذا كانت المهمة مكتملة مسبقاً، لا تفعل شيئاً
   if (task.current >= task.target) return;
 
+  const prevCurrent = task.current;
+
   // 4. زيادة العداد
   task.current += amount;
 
   // منع العداد من تجاوز الهدف
   if (task.current > task.target) task.current = task.target;
+
+  if (prevCurrent < task.target && task.current === task.target) {
+    if (typeof addLocalNotification === "function") addLocalNotification("اكتمال مهمة يومية فردية", `اكتملت المهمة: ${task.desc}`, "task_alt");
+  }
 
   // 5. حفظ التحديث في السيرفر
   if (effectiveUserId) {

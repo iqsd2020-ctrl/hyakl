@@ -218,6 +218,11 @@ async function sendInvite(questionCount) {
     document.getElementById('settings-modal')?.classList.remove('active');
 
     showWaitingModal(questionCount);
+    if (typeof window.addLocalNotification === 'function') {
+        const name = challengeState.opponentData?.username || challengeState.opponentData?.name || 'الخصم';
+        const qc = typeof window.toArabicDigits === 'function' ? window.toArabicDigits(questionCount) : questionCount;
+        window.addLocalNotification('إرسال دعوة تحدي', `تم إرسال دعوة إلى ${name} • عدد الأسئلة: ${qc}`, 'swords');
+    }
     listenToInviteStatus(docRef.id);
 }
 
@@ -407,6 +412,10 @@ document.getElementById('player-profile-modal')?.classList.remove('active');
     document.getElementById('opponent-name-label').textContent = challengeState.isHost ? matchData.player2Name : matchData.player1Name;
     updateMatchUI();
     document.getElementById('challenge-match-view').classList.remove('hidden');
+    if (typeof window.addLocalNotification === 'function') {
+        const oppName = challengeState.isHost ? matchData.player2Name : matchData.player1Name;
+        window.addLocalNotification('بدء مباراة تحدي', `بدأت مباراة التحدي ضد ${oppName || 'الخصم'}.`, 'swords');
+    }
     
     // Setup RTDB Presence & Progress
     setupMatchRealtime(matchData);
@@ -923,7 +932,7 @@ async function settleChallengePoints(reason = "normal") {
                 const lSnap = await tx.get(loserRef);
                 const lData = lSnap.exists() ? (lSnap.data() || {}) : {};
                 const lBal = Number(lData.balance ?? lData.highScore ?? 0) || 0;
-                amount = Math.max(0, Math.min(100, lBal));
+                amount = Math.max(0, Math.min(500, lBal));
             }
 
             tx.update(matchRef, {

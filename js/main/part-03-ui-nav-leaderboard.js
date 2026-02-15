@@ -519,9 +519,32 @@ docs.forEach(doc => {
         const scoreEl = clone.querySelector('.player-score');
         const statusDot = clone.querySelector('.status-dot');
         const statusText = clone.querySelector('.status-text');
+        const titleEl = clone.querySelector('.player-title');
 
         // 3. تعبئة البيانات الأساسية
         nameEl.textContent = data.username;
+        if (titleEl) {
+            const tId = (data && typeof data.equippedTitleBadge === 'string') ? data.equippedTitleBadge : '';
+            if (tId && tId.includes('_lvl')) {
+                const [baseId, lvlPart] = tId.split('_lvl');
+                const bObj = (typeof badgesMap !== 'undefined') ? badgesMap[baseId] : null;
+                const lvlNum = parseInt(lvlPart) || 1;
+                const lvlObj = (bObj && Array.isArray(bObj.levels)) ? bObj.levels.find(l => Number(l.id) === Number(lvlNum)) : null;
+                const c = lvlObj ? lvlObj.color : '';
+                let cls = 'text-slate-500';
+                if (c === 'bronze') cls = 'text-amber-700';
+                else if (c === 'silver') cls = 'text-slate-300';
+                else if (c === 'gold') cls = 'text-amber-400';
+                else if (c === 'diamond') cls = 'text-cyan-400';
+                else if (c === 'legendary') cls = 'text-red-600';
+                titleEl.textContent = bObj ? bObj.name : '';
+                titleEl.className = `player-title block text-[10px] font-bold leading-none mt-0.5 ${cls}`;
+                if (titleEl.textContent) titleEl.classList.remove('hidden'); else titleEl.classList.add('hidden');
+            } else {
+                titleEl.textContent = '';
+                titleEl.classList.add('hidden');
+            }
+        }
         if (levelEl) {
             const totalCorrect = (data && data.stats) ? data.stats.totalCorrect : 0;
             const levelNum = (typeof computePlayerLevelProgress === 'function') ? computePlayerLevelProgress(totalCorrect).level : 1;

@@ -79,17 +79,63 @@ function initBagSystem() {
     invGrid.className = 'game-store-grid';
 
     // عنوان القسم
-    const invHeader = document.createElement('h4');
-    invHeader.className = "text-sm text-slate-400 mb-3 font-bold mt-4 border-t border-slate-700 pt-4";
-    invHeader.textContent = "إطاراتي (اضغط للتجهيز)";
-    invContainer.appendChild(invHeader);
+    const existingSubTabs = getEl('inv-subtabs');
+    if (existingSubTabs) existingSubTabs.remove();
 
-    // إضافة كل الإطارات الممكنة للشبكة
+    const existingTitlesHeader = getEl('inv-titles-header');
+    if (existingTitlesHeader) existingTitlesHeader.remove();
+    const existingTitlesGrid = getEl('inv-titles-grid');
+    if (existingTitlesGrid) existingTitlesGrid.remove();
+
+    const subTabs = document.createElement('div');
+    subTabs.id = 'inv-subtabs';
+    subTabs.className = "flex items-center gap-2 mb-3 font-bold mt-4 border-t border-slate-700 pt-4";
+
+    const tabFrames = document.createElement('button');
+    tabFrames.id = 'inv-tab-frames';
+    tabFrames.type = 'button';
+    tabFrames.className = "px-3 py-2 rounded-lg text-xs font-bold bg-amber-500 text-black";
+
+    const tabTitles = document.createElement('button');
+    tabTitles.id = 'inv-tab-titles';
+    tabTitles.type = 'button';
+    tabTitles.className = "px-3 py-2 rounded-lg text-xs font-bold bg-slate-700 text-slate-300";
+
+    tabFrames.textContent = "إطاراتي";
+    tabTitles.textContent = "ألقابي";
+
+    subTabs.appendChild(tabFrames);
+    subTabs.appendChild(tabTitles);
+    invContainer.appendChild(subTabs);
+
     framesData.forEach(f => {
         const card = createGameItemCard(f, 'inventory');
         invGrid.appendChild(card);
     });
     invContainer.appendChild(invGrid);
+
+    const titlesGrid = document.createElement('div');
+    titlesGrid.id = 'inv-titles-grid';
+    titlesGrid.className = 'game-store-grid hidden';
+    invContainer.appendChild(titlesGrid);
+
+    const setInvSubTab = (tab) => {
+        if (tab === 'titles') {
+            tabTitles.classList.add('bg-amber-500', 'text-black'); tabTitles.classList.remove('bg-slate-700', 'text-slate-300');
+            tabFrames.classList.remove('bg-amber-500', 'text-black'); tabFrames.classList.add('bg-slate-700', 'text-slate-300');
+            invGrid.classList.add('hidden');
+            titlesGrid.classList.remove('hidden');
+        } else {
+            tabFrames.classList.add('bg-amber-500', 'text-black'); tabFrames.classList.remove('bg-slate-700', 'text-slate-300');
+            tabTitles.classList.remove('bg-amber-500', 'text-black'); tabTitles.classList.add('bg-slate-700', 'text-slate-300');
+            titlesGrid.classList.add('hidden');
+            invGrid.classList.remove('hidden');
+        }
+    };
+
+    tabFrames.addEventListener('click', () => setInvSubTab('frames'));
+    tabTitles.addEventListener('click', () => setInvSubTab('titles'));
+    setInvSubTab('frames');
 
 
     // --- ب) بناء قسم المتجر (Shop) ---
@@ -119,6 +165,102 @@ function initBagSystem() {
 
 function createGameItemCard(fData,type){const tpl=document.getElementById('game-item-template');const clone=tpl.content.cloneNode(true);const btn=clone.querySelector('button');const prev=clone.querySelector('.item-preview');const name=clone.querySelector('.item-name');const act=clone.querySelector('.item-action');btn.id=`btn-${type}-${fData.id}`;prev.innerHTML=getAvatarHTML(userProfile.customAvatar,fData.id,"w-full h-full");name.textContent=fData.name;if(type==='shop'){act.innerHTML=`<span class="game-item-price text-[10px] bg-black/40 px-2 py-1 rounded text-amber-400 font-bold flex items-center gap-1 border border-white/5">${formatNumberAr(fData.price)} <span class="material-symbols-rounded text-[10px]">monetization_on</span></span>`}else{act.innerHTML='<div class="equip-badge hidden bg-green-500/20 p-1 rounded-full"><span class="material-symbols-rounded text-green-400 text-sm">check</span></div>'}btn.onclick=()=>{if(type==='inventory'){equipFrame(fData.id)}else{if(!btn.classList.contains('owned')){window.buyShopItem('frame',fData.price,fData.id)}}};return btn}
 
+function getTitleTierClass(c) {
+    let cls = 'text-slate-500';
+    if (c === 'bronze') cls = 'text-amber-700';
+    else if (c === 'silver') cls = 'text-slate-300';
+    else if (c === 'gold') cls = 'text-amber-400';
+    else if (c === 'diamond') cls = 'text-cyan-400';
+    else if (c === 'legendary') cls = 'text-red-600';
+    return cls;
+}
+
+function getTitleBadgeName(uniqueId) {
+    try {
+        const t = String(uniqueId || '');
+        if (!t.includes('_lvl')) return '';
+        const [baseId] = t.split('_lvl');
+        const b = (typeof badgesMap !== 'undefined') ? badgesMap[baseId] : null;
+        return b ? b.name : '';
+    } catch (_) {
+        return '';
+    }
+}
+
+function createTitleBadgeCard(bObj, lvlObj, uniqueId) {
+    const tpl = document.getElementById('game-item-template');
+    const clone = tpl.content.cloneNode(true);
+    const btn = clone.querySelector('button');
+    const prev = clone.querySelector('.item-preview');
+    const name = clone.querySelector('.item-name');
+    const act = clone.querySelector('.item-action');
+    btn.id = `btn-title-${uniqueId}`;
+    const c = getTitleTierClass(lvlObj ? lvlObj.color : '');
+    prev.innerHTML = `<div class="w-full h-full flex items-center justify-center"><span class="material-symbols-rounded ${c} text-3xl">star</span></div>`;
+    name.textContent = bObj ? bObj.name : '';
+    act.innerHTML = '<div class="equip-badge hidden bg-green-500/20 p-1 rounded-full"><span class="material-symbols-rounded text-green-400 text-sm">check</span></div>';
+    btn.onclick = () => { equipTitleBadge(uniqueId); };
+    return btn;
+}
+
+async function equipTitleBadge(uniqueId) {
+    userProfile.equippedTitleBadge = uniqueId;
+    updateProfileUI();
+    updateBagState();
+
+    const tName = getTitleBadgeName(uniqueId);
+
+    if (isGuestMode() || !effectiveUserId) {
+        scheduleGuestSave(true);
+        toast(`تم تجهيز اللقب: ${tName || '—'}`);
+        playSound('click');
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "users", effectiveUserId), { equippedTitleBadge: uniqueId });
+        toast(`تم تجهيز اللقب: ${tName || '—'}`);
+        playSound('click');
+    } catch (e) {
+        console.error(e);
+        toast("فشل حفظ التغيير", "error");
+    }
+}
+
+function renderTitleBadgesInventory() {
+    const grid = getEl('inv-titles-grid');
+    if (!grid) return;
+
+    grid.innerHTML = '';
+
+    const best = {};
+    (userProfile.badges || []).forEach(bid => {
+        if (typeof bid !== 'string' || !bid.includes('_lvl')) return;
+        const [baseId, lvlPart] = bid.split('_lvl');
+        const lvl = parseInt(lvlPart) || 1;
+        if (!best[baseId] || lvl > best[baseId].level) best[baseId] = { id: bid, baseId: baseId, level: lvl };
+    });
+
+    const items = Object.values(best);
+    if (items.length === 0) {
+        grid.innerHTML = '<p class="col-span-2 text-center text-slate-500 text-xs py-6">لا توجد ألقاب بعد</p>';
+        return;
+    }
+
+    items.sort((a, b) => b.level - a.level);
+
+    const current = userProfile.equippedTitleBadge || '';
+
+    items.forEach(item => {
+        const bObj = (typeof badgesMap !== 'undefined') ? badgesMap[item.baseId] : null;
+        if (!bObj) return;
+        const lvlObj = Array.isArray(bObj.levels) ? bObj.levels.find(l => Number(l.id) === Number(item.level)) : null;
+        const btn = createTitleBadgeCard(bObj, lvlObj, item.id);
+        if (item.id === current) btn.classList.add('equipped');
+        grid.appendChild(btn);
+    });
+}
+
 
 // دالة التحديث (تعمل عند كل فتح للحقيبة أو شراء)
 function updateBagState() {
@@ -132,6 +274,8 @@ function updateBagState() {
 
     const ownedFrames = userProfile.inventory.frames || ['default'];
     const currentFrame = userProfile.equippedFrame;
+
+    renderTitleBadgesInventory();
 
     // 2. تحديث عناصر الحقيبة (Inventory)
     framesData.forEach(f => {
@@ -627,6 +771,15 @@ function checkMarathonStatus() {
         btn.disabled = false;
         btn.classList.remove('opacity-50', 'cursor-not-allowed');
 
+        if (typeof addLocalNotification === 'function') {
+            const last = Number(localStorage.getItem('marathon_reminder_last_ts') || 0);
+            const nowTs = Date.now();
+            if (!last || (nowTs - last) >= 24 * 60 * 60 * 1000) {
+                localStorage.setItem('marathon_reminder_last_ts', String(nowTs));
+                addLocalNotification('تذكير بلعب الماراثون', 'الماراثون متاح الآن. ابدأ (أكمل النور).', 'local_fire_department');
+            }
+        }
+
 btn.innerHTML = `<span class="text-lg font-bold text-black">أكمل النور</span> <span class="material-symbols-rounded text-black">local_fire_department</span>`;
         return;
     }
@@ -672,6 +825,13 @@ btn.innerHTML = `<span class="text-lg font-bold text-black">أكمل النور<
     } else {
         btn.disabled = false;
         btn.classList.remove('cursor-not-allowed');
+        if (typeof addLocalNotification === 'function') {
+            const last = Number(localStorage.getItem('marathon_reminder_last_ts') || 0);
+            if (!last || (now - last) >= twentyFourHours) {
+                localStorage.setItem('marathon_reminder_last_ts', String(now));
+                addLocalNotification('تذكير بلعب الماراثون', 'الماراثون متاح الآن. ابدأ (أكمل النور).', 'local_fire_department');
+            }
+        }
         btn.innerHTML = `<span class="text-lg font-bold text-black">(أكمل النور)</span> <span class="material-symbols-rounded text-black">local_fire_department</span>`;
 
     }
@@ -810,6 +970,10 @@ function sanitizeUserData(data) {
     
     if (!cleanData.equippedFrame) {
         cleanData.equippedFrame = 'default';
+        wasFixed = true;
+    }
+    if (typeof cleanData.equippedTitleBadge !== 'string') {
+        cleanData.equippedTitleBadge = '';
         wasFixed = true;
     }
 
