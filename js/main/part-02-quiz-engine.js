@@ -502,7 +502,7 @@ async function endQuiz() {
             if (!gotBadge) { showMotivator(); }
         }, 700);
 
-        addLocalNotification('نهاية جولة', `أتممت جولة في "${quizState.contextTopic}". النتيجة: ${quizState.score} نقطة.`, 'sports_score');
+        addLocalNotification('نهاية جولة', `أتممت جولة في "${quizState.contextTopic}". النتيجة: ${quizState.score} نقطة.`, 'key');
         renderReviewArea();
 
         // رسالة التشجيع على التسجيل
@@ -595,7 +595,7 @@ async function endQuiz() {
         updateProfileUI();
     }
 
-    addLocalNotification('نهاية جولة', `أتممت جولة في "${quizState.contextTopic}". النتيجة: ${quizState.score} نقطة.`, 'sports_score');
+    addLocalNotification('نهاية جولة', `أتممت جولة في "${quizState.contextTopic}". النتيجة: ${quizState.score} نقطة.`, 'key');
     renderReviewArea();
 }
 

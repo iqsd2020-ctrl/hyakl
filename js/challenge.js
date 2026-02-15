@@ -6,7 +6,7 @@
 import { 
     collection, doc, setDoc, getDoc, updateDoc, addDoc, 
     query, where, onSnapshot, serverTimestamp, deleteDoc,
-    limit, orderBy, runTransaction
+    limit, orderBy, runTransaction, increment
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 
 import { 
@@ -731,6 +731,7 @@ function showPendingFinal(matchData, myCorrect, total, oppAnswered) {
 
     myRes.textContent = window.toArabicDigits(`${myCorrect}/${total}`);
     oppRes.textContent = `—/${window.toArabicDigits(`${total}`)}`;
+    applyChallengeCorrectToLeaderboard(myCorrect);
 
     document.getElementById('btn-close-challenge-result').onclick = () => {
         modal.classList.remove('active');
@@ -753,6 +754,7 @@ function showFinalAfterWait(matchData, myCorrect, oppCorrect, total, myLives, op
 
     myRes.textContent = window.toArabicDigits(`${myCorrect}/${total}`);
     oppRes.textContent = window.toArabicDigits(`${oppCorrect}/${total}`);
+    applyChallengeCorrectToLeaderboard(myCorrect);
 
     if (mLives <= 0) {
         title.textContent = "خسرت";
@@ -807,6 +809,7 @@ function showResult(reason, matchData) {
 
     myRes.textContent = window.toArabicDigits(`${myCorrect}/${total}`);
     oppRes.textContent = window.toArabicDigits(`${oppCorrect}/${total}`);
+    applyChallengeCorrectToLeaderboard(myCorrect);
 
     if (reason === "opponent_disconnected") {
         title.textContent = "فزت!";
@@ -916,26 +919,11 @@ async function settleChallengePoints(reason = "normal") {
             let amount = 0;
 
             if (winnerId && loserId) {
-                const winnerRef = doc(window.db, "users", winnerId);
                 const loserRef = doc(window.db, "users", loserId);
-
-                const wSnap = await tx.get(winnerRef);
                 const lSnap = await tx.get(loserRef);
-
-                const wData = wSnap.exists() ? (wSnap.data() || {}) : {};
                 const lData = lSnap.exists() ? (lSnap.data() || {}) : {};
-
-                const wBal = Number(wData.balance ?? wData.highScore ?? 0) || 0;
                 const lBal = Number(lData.balance ?? lData.highScore ?? 0) || 0;
-
                 amount = Math.max(0, Math.min(100, lBal));
-
-                if (amount > 0) {
-                    const newW = wBal + amount;
-                    const newL = lBal - amount;
-                    tx.set(winnerRef, { balance: newW, highScore: newW }, { merge: true });
-                    tx.set(loserRef, { balance: newL, highScore: newL }, { merge: true });
-                }
             }
 
             tx.update(matchRef, {
@@ -948,9 +936,35 @@ async function settleChallengePoints(reason = "normal") {
             });
         });
 
+        const settledSnap = await getDoc(matchRef);
+        const settled = settledSnap.exists() ? (settledSnap.data() || {}) : {};
+
+        const amount = Number(settled.pointsSettledAmount ?? 0) || 0;
+        const winnerId = settled.pointsWinnerId ?? null;
+        const loserId = settled.pointsLoserId ?? null;
+
+        const myUserRef = doc(window.db, "users", myId);
+
+        if (winnerId && loserId) {
+            if (myId === winnerId && settled.pointsAppliedWinner !== true) {
+                if (amount > 0) {
+                    await updateDoc(myUserRef, { balance: increment(amount), highScore: increment(amount) });
+                    if (typeof window.addLocalNotification === 'function') window.addLocalNotification('نقاط تحدي صديق', `تمت إضافة ${window.toArabicDigits(amount)} نقطة إلى رصيدك`, 'swords');
+                }
+                await updateDoc(matchRef, { pointsAppliedWinner: true, pointsAppliedWinnerAt: serverTimestamp() });
+            } else if (myId === loserId && settled.pointsAppliedLoser !== true) {
+                if (amount > 0) {
+                    await updateDoc(myUserRef, { balance: increment(-amount), highScore: increment(-amount) });
+                    if (typeof window.addLocalNotification === 'function') window.addLocalNotification('نقاط تحدي صديق', `تم خصم ${window.toArabicDigits(amount)} نقطة من رصيدك`, 'swords');
+                } else {
+                    if (typeof window.addLocalNotification === 'function') window.addLocalNotification('نقاط تحدي صديق', `لا يوجد رصيد كافٍ للخصم`, 'swords');
+                }
+                await updateDoc(matchRef, { pointsAppliedLoser: true, pointsAppliedLoserAt: serverTimestamp() });
+            }
+        }
+
         if (window.userProfile) {
-            const myRef = doc(window.db, "users", myId);
-            const mySnap = await getDoc(myRef);
+            const mySnap = await getDoc(myUserRef);
             if (mySnap.exists()) {
                 const d = mySnap.data() || {};
                 const b = Number(d.balance ?? d.highScore ?? 0) || 0;
@@ -958,6 +972,86 @@ async function settleChallengePoints(reason = "normal") {
                 window.userProfile.highScore = b;
                 if (typeof window.updateProfileUI === 'function') window.updateProfileUI();
             }
+        }
+    } catch (e) {
+        console.error(e);
+    }
+}
+async function applyChallengeCorrectToLeaderboard(myCorrect) {
+    try {
+        if (!window.db) return;
+        const matchId = challengeState.currentMatchId;
+        if (!matchId) return;
+
+        const myId =
+            window.effectiveUserId ??
+            window.auth?.currentUser?.uid ??
+            window.firebaseAuth?.currentUser?.uid ??
+            window.user?.uid;
+
+        if (!myId) return;
+        window.effectiveUserId = myId;
+
+        const inc = Number(myCorrect) || 0;
+        if (inc <= 0) return;
+
+        const d = new Date();
+        const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+        const matchRef = doc(window.db, "challengeMatches", matchId);
+        const userRef = doc(window.db, "users", myId);
+
+        let appliedNow = false;
+
+        await runTransaction(window.db, async (tx) => {
+            const mSnap = await tx.get(matchRef);
+            if (!mSnap.exists()) return;
+
+            const m = mSnap.data() || {};
+            const applied = m.challengeCorrectApplied || {};
+            if (applied[myId] === true) return;
+
+            const uSnap = await tx.get(userRef);
+            if (!uSnap.exists()) return;
+
+            const u = uSnap.data() || {};
+            const stats = u.stats || {};
+            const ms = u.monthlyStats || {};
+
+            const prevTotal = Number(stats.totalCorrect || 0) || 0;
+            const newTotal = prevTotal + inc;
+
+            let newMonthCorrect = inc;
+            if (ms.key === monthKey) newMonthCorrect = (Number(ms.correct || 0) || 0) + inc;
+
+            tx.update(userRef, {
+                "stats.totalCorrect": newTotal,
+                "monthlyStats.key": monthKey,
+                "monthlyStats.correct": newMonthCorrect
+            });
+
+            tx.update(matchRef, {
+                [`challengeCorrectApplied.${myId}`]: true,
+                [`challengeCorrectAmount.${myId}`]: inc
+            });
+
+            appliedNow = true;
+        });
+
+        if (appliedNow && window.userProfile) {
+            window.userProfile.stats = window.userProfile.stats || {};
+            window.userProfile.monthlyStats = window.userProfile.monthlyStats || {};
+
+            window.userProfile.stats.totalCorrect = (Number(window.userProfile.stats.totalCorrect || 0) || 0) + inc;
+
+            if (window.userProfile.monthlyStats.key !== monthKey) {
+                window.userProfile.monthlyStats.key = monthKey;
+                window.userProfile.monthlyStats.correct = inc;
+            } else {
+                window.userProfile.monthlyStats.correct = (Number(window.userProfile.monthlyStats.correct || 0) || 0) + inc;
+            }
+
+            if (typeof window.updateProfileUI === 'function') window.updateProfileUI();
         }
     } catch (e) {
         console.error(e);

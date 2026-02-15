@@ -799,7 +799,7 @@ const count = countValue === 'all' ? 'all' : parseInt(countValue);
         const seenSet = getCombinedSeenSet();
         let freshQuestions = allAvailableQuestions.filter(q => q && q.id && !seenSet.has(String(q.id)));
         if (freshQuestions.length === 0) {
-            toast("هذا الملف مختوم حاول مع موضوع اخر", "warning");
+            toast("هذا الملف مختوم حاول مع موضوع اخر", "key");
             resetButton();
             handleSealedTopic(topic, allAvailableQuestions);
             return;

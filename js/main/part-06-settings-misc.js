@@ -547,7 +547,7 @@ window.toast = function(msg, type = 'info', forceSave = false) {
     } else if (type === 'error') {
         borderColor = 'border-red-600';
         barColor = 'bg-red-600';
-        iconName = 'warning';
+        iconName = 'key';
     } else if (type === 'gold' || msg.includes('نقاط') || msg.includes('مكافأة')) {
         borderColor = 'border-amber-400';
         barColor = 'bg-amber-400';
