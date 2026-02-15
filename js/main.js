@@ -1,7 +1,7 @@
 // Bootstrap module: Firebase + app module imports, exposed to global scope for split scripts
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
 import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, arrayUnion, increment, enableIndexedDbPersistence, deleteField } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, collection, doc, setDoc, getDoc, updateDoc, query, where, getDocs, serverTimestamp, orderBy, limit, arrayUnion, increment, deleteField } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
 import { getDatabase, ref, set, onDisconnect, onValue, serverTimestamp as rtdbTimestamp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-database.js";
 import { topicsData, badgesData, badgesMap, sectionFilesMap } from './data.js';
 import { bindDailyQuestsDeps, initDailyQuests as dq_initDailyQuests, updateQuestProgress as dq_updateQuestProgress } from './daily_quests.js';
@@ -38,9 +38,9 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 // تأكد من تهيئة خدمات المصادقة/Firestore داخل auth.js بعد إنشاء التطبيق
+const db = initializeFirestore(app, { localCache: persistentLocalCache() });
 initAuthServices(app);
 const auth = getAuth(app);
-const db = getFirestore(app);
 const rtdb = getDatabase(app); 
 
 
@@ -111,14 +111,6 @@ try {
   });
 } catch (_) {}
 
-// Offline persistence for Firestore (same logic as before)
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err && err.code == 'failed-precondition') {
-    console.log('Persistence failed: Multiple tabs open');
-  } else if (err && err.code == 'unimplemented') {
-    console.log('Persistence is not available');
-  }
-});
 
 // __MAIN_SPLIT_LOADER__ : load split parts after bootstrap completes (strict order)
 const __MAIN_PARTS__ = [
