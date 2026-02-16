@@ -256,6 +256,23 @@ function scheduleGuestSave(force = false) {
     } catch (_) {}
 }
 
+function applyEquippedBackground() {
+    try {
+        if (!userProfile) return;
+        const raw = (typeof userProfile.equippedBackground === 'string') ? userProfile.equippedBackground.trim() : '';
+        if (!raw) return;
+
+        let path = raw;
+        if (/^\d{1,2}\.svg$/.test(raw)) {
+            path = `icon/${raw}`;
+        }
+        if (!/^[A-Za-z0-9._\/-]+\.(svg|png|jpg|jpeg|webp)$/i.test(path)) return;
+        if (path.includes('..')) return;
+
+        document.documentElement.style.setProperty('--bg-pattern-image', `url("${path}")`);
+    } catch (_) {}
+}
+
 function getDefaultGuestProfile() {
     return {
         username: 'ضيف',
@@ -266,6 +283,7 @@ function getDefaultGuestProfile() {
         customAvatar: null,
         equippedFrame: 'default',
         equippedTitleBadge: '',
+        equippedBackground: '1.svg',
         badges: ['beginner'],
         favorites: [],
         seenQuestions: [],
@@ -350,6 +368,7 @@ function enterGuestMode({ silent = false } = {}) {
     dq_initDailyQuests();
 } catch (_) {}
     try { updateProfileUI(); } catch (_) {}
+    try { applyEquippedBackground(); } catch (_) {}
 
     hide('auth-loading');
     hide('login-area');
@@ -440,6 +459,7 @@ function mergeGuestIntoRemoteProfile(remote, guest) {
     if (!merged.customAvatar && gClean.customAvatar) merged.customAvatar = gClean.customAvatar;
     if (!merged.equippedFrame && gClean.equippedFrame) merged.equippedFrame = gClean.equippedFrame;
     if (!merged.equippedTitleBadge && gClean.equippedTitleBadge) merged.equippedTitleBadge = gClean.equippedTitleBadge;
+    if (!merged.equippedBackground && gClean.equippedBackground) merged.equippedBackground = gClean.equippedBackground;
 
     // 6) weekly/monthly: إذا نفس المفتاح نجمع، وإلا نحتفظ بما لدى الحساب
     if (rClean.weeklyStats && gClean.weeklyStats && rClean.weeklyStats.key && gClean.weeklyStats.key && rClean.weeklyStats.key === gClean.weeklyStats.key) {
@@ -492,6 +512,7 @@ async function syncGuestIfPending(user) {
             inventory: merged.inventory,
             equippedFrame: merged.equippedFrame || 'default',
             equippedTitleBadge: merged.equippedTitleBadge || '',
+            equippedBackground: merged.equippedBackground || '1.svg',
             customAvatar: merged.customAvatar || null,
             weeklyStats: merged.weeklyStats || deleteField(),
             monthlyStats: merged.monthlyStats || deleteField(),

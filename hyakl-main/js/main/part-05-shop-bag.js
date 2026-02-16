@@ -86,6 +86,8 @@ function initBagSystem() {
     if (existingTitlesHeader) existingTitlesHeader.remove();
     const existingTitlesGrid = getEl('inv-titles-grid');
     if (existingTitlesGrid) existingTitlesGrid.remove();
+    const existingBackgroundsGrid = getEl('inv-backgrounds-grid');
+    if (existingBackgroundsGrid) existingBackgroundsGrid.remove();
 
     const subTabs = document.createElement('div');
     subTabs.id = 'inv-subtabs';
@@ -101,11 +103,18 @@ function initBagSystem() {
     tabTitles.type = 'button';
     tabTitles.className = "px-3 py-2 rounded-lg text-xs font-bold bg-slate-700 text-slate-300";
 
+    const tabBackgrounds = document.createElement('button');
+    tabBackgrounds.id = 'inv-tab-backgrounds';
+    tabBackgrounds.type = 'button';
+    tabBackgrounds.className = "px-3 py-2 rounded-lg text-xs font-bold bg-slate-700 text-slate-300";
+
     tabFrames.textContent = "إطاراتي";
     tabTitles.textContent = "ألقابي";
+    tabBackgrounds.textContent = "الخلفيات";
 
     subTabs.appendChild(tabFrames);
     subTabs.appendChild(tabTitles);
+    subTabs.appendChild(tabBackgrounds);
     invContainer.appendChild(subTabs);
 
     framesData.forEach(f => {
@@ -119,22 +128,58 @@ function initBagSystem() {
     titlesGrid.className = 'game-store-grid hidden';
     invContainer.appendChild(titlesGrid);
 
+    const backgroundsGrid = document.createElement('div');
+    backgroundsGrid.id = 'inv-backgrounds-grid';
+    backgroundsGrid.className = 'game-store-grid hidden';
+    invContainer.appendChild(backgroundsGrid);
+
+    for (let i = 1; i <= 11; i++) {
+        const file = `${i}.svg`;
+        const tpl = document.getElementById('game-item-template');
+        const clone = tpl.content.cloneNode(true);
+        const btn = clone.querySelector('button');
+        const prev = clone.querySelector('.item-preview');
+        const name = clone.querySelector('.item-name');
+        const act = clone.querySelector('.item-action');
+
+        btn.id = `btn-bg-${i}`;
+
+        prev.innerHTML = `<div class="w-full h-full rounded-lg border border-slate-700/60 bg-slate-900/40" style="background-image:url('icon/${file}');background-size:70px auto;background-repeat:repeat;background-position:center;"></div>`;
+        name.textContent = `خلفية ${formatNumberAr(i)}`;
+        act.innerHTML = '<div class="equip-badge hidden bg-green-500/20 p-1 rounded-full"><span class="material-symbols-rounded text-green-400 text-sm">check</span></div>';
+
+        btn.onclick = () => equipBackground(file);
+        backgroundsGrid.appendChild(btn);
+    }
+
     const setInvSubTab = (tab) => {
         if (tab === 'titles') {
             tabTitles.classList.add('bg-amber-500', 'text-black'); tabTitles.classList.remove('bg-slate-700', 'text-slate-300');
             tabFrames.classList.remove('bg-amber-500', 'text-black'); tabFrames.classList.add('bg-slate-700', 'text-slate-300');
+            tabBackgrounds.classList.remove('bg-amber-500', 'text-black'); tabBackgrounds.classList.add('bg-slate-700', 'text-slate-300');
             invGrid.classList.add('hidden');
+            backgroundsGrid.classList.add('hidden');
             titlesGrid.classList.remove('hidden');
+        } else if (tab === 'backgrounds') {
+            tabBackgrounds.classList.add('bg-amber-500', 'text-black'); tabBackgrounds.classList.remove('bg-slate-700', 'text-slate-300');
+            tabFrames.classList.remove('bg-amber-500', 'text-black'); tabFrames.classList.add('bg-slate-700', 'text-slate-300');
+            tabTitles.classList.remove('bg-amber-500', 'text-black'); tabTitles.classList.add('bg-slate-700', 'text-slate-300');
+            titlesGrid.classList.add('hidden');
+            invGrid.classList.add('hidden');
+            backgroundsGrid.classList.remove('hidden');
         } else {
             tabFrames.classList.add('bg-amber-500', 'text-black'); tabFrames.classList.remove('bg-slate-700', 'text-slate-300');
             tabTitles.classList.remove('bg-amber-500', 'text-black'); tabTitles.classList.add('bg-slate-700', 'text-slate-300');
+            tabBackgrounds.classList.remove('bg-amber-500', 'text-black'); tabBackgrounds.classList.add('bg-slate-700', 'text-slate-300');
             titlesGrid.classList.add('hidden');
+            backgroundsGrid.classList.add('hidden');
             invGrid.classList.remove('hidden');
         }
     };
 
     tabFrames.addEventListener('click', () => setInvSubTab('frames'));
     tabTitles.addEventListener('click', () => setInvSubTab('titles'));
+    tabBackgrounds.addEventListener('click', () => setInvSubTab('backgrounds'));
     setInvSubTab('frames');
 
 
@@ -303,6 +348,18 @@ function updateBagState() {
         }
     });
 
+    const currentBg = userProfile.equippedBackground || '';
+    for (let i = 1; i <= 11; i++) {
+        const btn = document.getElementById(`btn-bg-${i}`);
+        if (!btn) continue;
+        const file = `${i}.svg`;
+        if (currentBg === file || currentBg === `icon/${file}`) {
+            btn.classList.add('equipped');
+        } else {
+            btn.classList.remove('equipped');
+        }
+    }
+
     // 3. تحديث عناصر المتجر (Shop)
     framesData.forEach(f => {
         if (f.id === 'default') return;
@@ -361,6 +418,33 @@ async function equipFrame(frameId) {
             equippedFrame: frameId
         });
         toast(`تم تجهيز: ${getFrameName(frameId)}`);
+        playSound('click');
+    } catch(e) {
+        console.error(e);
+        toast("فشل حفظ التغيير", "error");
+    }
+}
+
+async function equipBackground(fileName) {
+    userProfile.equippedBackground = fileName;
+    try { if (typeof applyEquippedBackground === 'function') applyEquippedBackground(); } catch (_) {}
+    updateBagState();
+
+    const n = parseInt(String(fileName), 10);
+    const label = n ? `خلفية ${formatNumberAr(n)}` : 'الخلفية';
+
+    if (isGuestMode() || !effectiveUserId) {
+        scheduleGuestSave(true);
+        toast(`تم تطبيق: ${label}`);
+        playSound('click');
+        return;
+    }
+
+    try {
+        await updateDoc(doc(db, "users", effectiveUserId), {
+            equippedBackground: fileName
+        });
+        toast(`تم تطبيق: ${label}`);
         playSound('click');
     } catch(e) {
         console.error(e);
@@ -974,6 +1058,10 @@ function sanitizeUserData(data) {
     }
     if (typeof cleanData.equippedTitleBadge !== 'string') {
         cleanData.equippedTitleBadge = '';
+        wasFixed = true;
+    }
+    if (typeof cleanData.equippedBackground !== 'string' || cleanData.equippedBackground.trim() === '') {
+        cleanData.equippedBackground = '1.svg';
         wasFixed = true;
     }
 

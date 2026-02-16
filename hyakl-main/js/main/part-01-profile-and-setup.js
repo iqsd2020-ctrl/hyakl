@@ -53,6 +53,7 @@ window.userProfile = userProfile;
 });
 dq_initDailyQuests();
 updateProfileUI();
+try { applyEquippedBackground(); } catch (_) {}
         // ✅ تهيئة نظام المراسلة (منفصل) + إظهار فقاعة الرسائل الجديدة
         try { await initMessaging({ db, uid, getUsername: () => userProfile?.username, toast }); } catch(e) { console.warn('Messaging init failed', e); }
         // ✅ تطبيق الحظر (يظهر نافذة تمنع الاستخدام إذا كان المستخدم محظوراً)
@@ -68,7 +69,7 @@ function getAvatarHTML(imgUrl, frameId, sizeClass = "w-10 h-10", fallbackText = 
 const safeImgUrl = sanitizeImageUrl(imgUrl);
 
 if (safeImgUrl) {
-    imgContent = `<img src="${escapeHTML(safeImgUrl)}" class="w-full h-full object-cover rounded-full" referrerpolicy="no-referrer">`;
+    imgContent = `<img src="${escapeHTML(safeImgUrl)}" class="w-full h-full object-cover rounded-full" referrerpolicy="no-referrer" draggable="false" oncontextmenu="return false">`;
 } else {
     if (fallbackText) {
         imgContent = `<div class="w-full h-full rounded-full bg-slate-800 flex items-center justify-center text-center px-1"><span class="text-[9px] leading-tight text-slate-200 font-bold">${escapeHTML(fallbackText)}</span></div>`;

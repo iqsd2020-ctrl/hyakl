@@ -282,7 +282,7 @@
                 </div>
                 <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl p-5 mb-4 border border-slate-700 shadow-lg relative overflow-hidden" onclick="try{document.getElementById('user-profile-btn')?.click()}catch(_){}">
                     <div class="absolute -left-10 -top-10 w-40 h-40 bg-amber-400 opacity-5 rounded-full blur-3xl pointer-events-none"></div>
-                    <button id="guest-auth-btn-profile-card" type="button" class="hidden absolute top-4 left-4 w-10 h-10 rounded-full bg-slate-800 border border-amber-500/40 text-amber-300 flex items-center justify-center active:scale-95 transition animate-pulse" title="تسجيل الدخول / التسجيل" aria-label="تسجيل الدخول أو التسجيل" onclick="try{event.stopPropagation();}catch(_){} try{window.openGuestAuthRegister&&window.openGuestAuthRegister()}catch(_){}">
+                    <button id="guest-auth-btn-profile-card" type="button" class="hidden absolute z-20 top-4 left-4 w-10 h-10 rounded-full bg-slate-800 border border-amber-500/40 text-amber-300 flex items-center justify-center active:scale-95 transition animate-pulse" title="تسجيل الدخول / التسجيل" aria-label="تسجيل الدخول أو التسجيل" onclick="try{event.stopPropagation();}catch(_){} try{window.openGuestAuthRegister&&window.openGuestAuthRegister()}catch(_){}">
                             <svg class="google-mark" viewBox="0 0 48 48" aria-hidden="true">
                             <path fill="#EA4335" d="M24 9.5c3.54 0 6.73 1.22 9.25 3.62l6.9-6.9C35.97 2.36 30.4 0 24 0 14.62 0 6.51 5.38 2.56 13.22l8.05 6.26C12.6 13.06 17.87 9.5 24 9.5z"/>
                             <path fill="#4285F4" d="M46.5 24.5c0-1.58-.14-3.1-.4-4.58H24v8.68h12.65c-.54 2.88-2.16 5.33-4.6 6.97l7.03 5.46C43.7 36.9 46.5 31.3 46.5 24.5z"/>
@@ -293,7 +293,7 @@
                     <div class="flex items-center gap-4 relative z-10">
                         <div id="profile-card-avatar" class="avatar-wrapper w-16 h-16 rounded-full bg-slate-700 border-2 border-amber-400">
                             <div class="w-full h-full rounded-full overflow-hidden flex items-center justify-center">
-                                <img id="profile-card-avatar-img" src="Icon.png" alt="Logo" class="w-full h-full object-contain p-2" referrerpolicy="no-referrer">
+                                <img id="profile-card-avatar-img" src="Icon.png" alt="Logo" class="w-full h-full object-contain p-2" referrerpolicy="no-referrer" draggable="false" oncontextmenu="return false">
                                 <div id="profile-card-avatar-text" class="hidden w-full h-full flex items-center justify-center text-center px-1">
                                     <span class="text-[10px] leading-tight text-slate-200 font-bold">ضع صورتك هنا</span>
                                 </div>
@@ -679,7 +679,7 @@
             <button type="button" class="close-modal absolute top-4 left-4 text-slate-400 hover:text-white z-50 p-2 text-xl font-bold transition hover:scale-110">✕</button>
             <div class="text-center mb-6 relative">
                  <div class="w-24 h-24 rounded-full mx-auto border-4 border-amber-500 shadow-lg overflow-hidden relative bg-slate-800 flex items-center justify-center">
-                     <img id="popup-player-img" src="" class="w-full h-full object-cover hidden" alt="">
+                     <img id="popup-player-img" src="" class="w-full h-full object-cover hidden" alt="" draggable="false" oncontextmenu="return false">
                      <span id="popup-player-icon" class="material-symbols-rounded text-6xl text-slate-500">account_circle</span>
                  </div>
                  <h3 id="popup-player-name" class="text-2xl font-bold text-white mt-4 font-heading">...</h3>
@@ -1436,7 +1436,7 @@
                     console.log('SW Registered:', registration.scope);
                     if (!localStorage.getItem('sw_install_notif_v1') && typeof window.addLocalNotification === 'function') {
                         localStorage.setItem('sw_install_notif_v1', '1');
-                        window.addLocalNotification('تثبيت عامل الخدمة', 'تم تثبيت sw.js بنجاح.', 'cloud_done');
+                        window.addLocalNotification('تثبيت عامل الخدمة', 'تم تثبيت بنجاح.', 'cloud_done');
                     }
 
                     if (btnUpdateLater) btnUpdateLater.addEventListener('click', hideUpdateModal);
