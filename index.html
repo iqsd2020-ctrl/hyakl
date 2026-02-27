@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <title>هياكل النور</title>    
     <link rel="dns-prefetch" href="https://firestore.googleapis.com">
     <link rel="stylesheet" href="fonts.css">
@@ -1476,6 +1476,15 @@
                 });
         });
     }
+</script>
+<script>
+document.addEventListener('deviceready', function () {
+    try {
+        if (window.StatusBar) {
+            window.StatusBar.hide();
+        }
+    } catch (_) {}
+}, false);
 </script>
     <div id="low-health-vignette" class="pointer-events-none fixed inset-0 z-[60] opacity-0 transition-opacity duration-500"></div>
 <div id="daily-reward-modal" class="modal-overlay z-[80]">
