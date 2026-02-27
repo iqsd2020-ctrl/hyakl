@@ -13,7 +13,6 @@ import {
   signOut,
   signInWithCredential
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-
 import {
   getFirestore,
   doc,
@@ -101,8 +100,9 @@ async function startCordovaNativeGoogleLogin() {
  * return after authentication is complete.
  */
 export async function startGoogleLoginRedirect() {
-  // علامة لتشخيص حالة الرجوع من Redirect بدون تسجيل دخول
-  // نكتب العلامة في sessionStorage + localStorage (بعض البيئات تمنع أحدهما)
+  if (isCordovaNativeGoogleAvailable()) {
+    return await startCordovaNativeGoogleLogin();
+  }
   try { sessionStorage.setItem('__google_redirect_pending', '1'); } catch (_) {}
   try { localStorage.setItem('__google_redirect_pending', '1'); } catch (_) {}
   await signInWithRedirect(auth(), provider);
