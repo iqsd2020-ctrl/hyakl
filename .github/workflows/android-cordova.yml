@@ -39,11 +39,9 @@ jobs:
       - name: Decode Android signing files
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          GOOGLE_SERVICES_JSON_BASE64: ${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}
         run: |
           mkdir -p .secrets
           printf '%s' "$ANDROID_KEYSTORE_BASE64" | tr -d '\r\n\t ' | base64 -d > .secrets/hyakl-release.jks || { echo "ANDROID_KEYSTORE_BASE64 is invalid"; exit 1; }
-          printf '%s' "$GOOGLE_SERVICES_JSON_BASE64" | tr -d '\r\n\t ' | base64 -d > .secrets/google-services.json || { echo "GOOGLE_SERVICES_JSON_BASE64 is invalid"; exit 1; }
 
       - name: Create temporary Cordova project
         run: |
@@ -93,7 +91,48 @@ jobs:
             ./ app/www/
 
           cd app
-          cp ../.secrets/google-services.json ./google-services.json
+          cat > google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "160722124006",
+              "firebase_url": "https://ahl-albayet-default-rtdb.firebaseio.com",
+              "project_id": "ahl-albayet",
+              "storage_bucket": "ahl-albayet.firebasestorage.app"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:160722124006:android:5fb834ef7797ba6bf80f27",
+                  "android_client_info": {
+                    "package_name": "com.iqsd2020.hyakl"
+                  }
+                },
+                "oauth_client": [
+                  {
+                    "client_id": "160722124006-dllepep3cm6ltak4hk0c9760733iv182.apps.googleusercontent.com",
+                    "client_type": 3
+                  }
+                ],
+                "api_key": [
+                  {
+                    "current_key": "AIzaSyBx72L5nn17AjHNoriEvGZ8aSDOb0v2ZkI"
+                  }
+                ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      {
+                        "client_id": "160722124006-dllepep3cm6ltak4hk0c9760733iv182.apps.googleusercontent.com",
+                        "client_type": 3
+                      }
+                    ]
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
           cordova plugin add cordova-plugin-statusbar
           cordova platform add android@14.0.1
           cordova plugin add cordova-plugin-firebasex
