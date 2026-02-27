@@ -61,6 +61,9 @@ jobs:
               <preference name="ScrollEnabled" value="true" />
               <preference name="AndroidLaunchMode" value="singleTask" />
               <preference name="Orientation" value="portrait" />
+              <preference name="Fullscreen" value="true" />
+              <preference name="StatusBarOverlaysWebView" value="true" />
+              <preference name="StatusBarBackgroundColor" value="#00000000" />
               <preference name="ResolveServiceWorkerRequests" value="true" />
               <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/Pic/512x512.png" />
               <preference name="SplashScreenDelay" value="0" />
@@ -81,6 +84,7 @@ jobs:
             ./ app/www/
 
           cd app
+          cordova plugin add cordova-plugin-statusbar
           cordova platform add android@14.0.1
 
       - name: Build debug APK
