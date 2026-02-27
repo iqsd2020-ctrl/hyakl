@@ -36,6 +36,12 @@ jobs:
       - name: Install Cordova CLI
         run: npm install -g cordova@12
 
+      - name: Decode Android signing files
+        run: |
+          mkdir -p .secrets
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > .secrets/hyakl-release.jks
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > .secrets/google-services.json
+
       - name: Create temporary Cordova project
         run: |
           rm -rf app
@@ -84,17 +90,24 @@ jobs:
             ./ app/www/
 
           cd app
+          cp ../.secrets/google-services.json ./google-services.json
           cordova plugin add cordova-plugin-statusbar
           cordova platform add android@14.0.1
+          cordova plugin add cordova-plugin-firebasex
 
-      - name: Build debug APK
+      - name: Build signed release APK
         working-directory: app
-        run: cordova build android --debug -- --packageType=apk
+        run: >
+          cordova build android --release -- --packageType=apk
+          --keystore=../.secrets/hyakl-release.jks
+          --storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          --alias=${{ secrets.ANDROID_KEY_ALIAS }}
+          --password=${{ secrets.ANDROID_KEY_PASSWORD }}
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hyakl-debug-apk
+          name: hyakl-release-apk
           path: |
-            app/platforms/android/app/build/outputs/apk/debug/*.apk
-            app/platforms/android/app/build/outputs/apk/debug/output-metadata.json
+            app/platforms/android/app/build/outputs/apk/release/*.apk
+            app/platforms/android/app/build/outputs/apk/release/output-metadata.json
