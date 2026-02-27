@@ -1,0 +1,96 @@
+name: Build Android APK (Cordova)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.11.1"
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "17"
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses || true
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Install Cordova CLI
+        run: npm install -g cordova@12
+
+      - name: Create temporary Cordova project
+        run: |
+          rm -rf app
+          npx cordova create app com.iqsd2020.hyakl "هياكل النور"
+
+          cat > app/config.xml <<'EOF'
+          <?xml version='1.0' encoding='utf-8'?>
+          <widget id="com.iqsd2020.hyakl" version="1.0.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+              <name>هياكل النور</name>
+              <description>رحلة في رحاب النور</description>
+              <author email="noreply@example.com" href="https://github.com/iqsd2020-ctrl">iqsd2020-ctrl</author>
+
+              <content src="index.html" />
+              <access origin="*" />
+              <allow-navigation href="*" />
+              <allow-intent href="http://*/*" />
+              <allow-intent href="https://*/*" />
+              <allow-intent href="tel:*" />
+              <allow-intent href="sms:*" />
+              <allow-intent href="mailto:*" />
+              <allow-intent href="geo:*" />
+
+              <preference name="ScrollEnabled" value="true" />
+              <preference name="AndroidLaunchMode" value="singleTask" />
+              <preference name="Orientation" value="portrait" />
+              <preference name="ResolveServiceWorkerRequests" value="true" />
+              <preference name="AndroidWindowSplashScreenAnimatedIcon" value="www/Pic/512x512.png" />
+              <preference name="SplashScreenDelay" value="0" />
+              <preference name="ShowSplashScreenSpinner" value="false" />
+
+              <icon src="www/Pic/512x512.png" />
+          </widget>
+          EOF
+
+          rm -rf app/www
+          mkdir -p app/www
+
+          rsync -av --delete \
+            --exclude ".git" \
+            --exclude ".github" \
+            --exclude "app" \
+            --exclude "*.md" \
+            ./ app/www/
+
+          cd app
+          cordova platform add android@14.0.1
+
+      - name: Build debug APK
+        working-directory: app
+        run: cordova build android --debug -- --packageType=apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hyakl-debug-apk
+          path: |
+            app/platforms/android/app/build/outputs/apk/debug/*.apk
+            app/platforms/android/app/build/outputs/apk/debug/output-metadata.json
