@@ -10,7 +10,8 @@ import {
   setPersistence,
   browserLocalPersistence,
   updatePassword,
-  signOut
+  signOut,
+  signInWithCredential
 } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 
 import {
@@ -55,6 +56,46 @@ function db() {
 const provider = new GoogleAuthProvider();
 provider.setCustomParameters({ prompt: "select_account" });
 
+const CORDOVA_GOOGLE_WEB_CLIENT_ID = "160722124006-dllepep3cm6ltak4hk0c9760733iv182.apps.googleusercontent.com";
+
+function isCordovaNativeGoogleAvailable() {
+  return typeof window !== "undefined"
+    && !!window.cordova
+    && !!window.FirebasePlugin
+    && typeof window.FirebasePlugin.authenticateUserWithGoogle === "function";
+}
+
+function normalizeNativeGoogleError(error) {
+  if (!error) return new Error("فشل تسجيل الدخول عبر Google");
+  if (error instanceof Error) return error;
+  if (typeof error === "string") return new Error(error);
+  return new Error(error.message || error.error || "فشل تسجيل الدخول عبر Google");
+}
+
+async function startCordovaNativeGoogleLogin() {
+  const clientId = (CORDOVA_GOOGLE_WEB_CLIENT_ID || "").trim();
+  if (!clientId) {
+    throw new Error("لم يتم ضبط Web Client ID الخاص بـ Google");
+  }
+
+  const nativeCredential = await new Promise((resolve, reject) => {
+    window.FirebasePlugin.authenticateUserWithGoogle(
+      clientId,
+      resolve,
+      (error) => reject(normalizeNativeGoogleError(error)),
+      { useCredentialManager: true }
+    );
+  });
+
+  const idToken = nativeCredential && nativeCredential.idToken ? String(nativeCredential.idToken) : "";
+  if (!idToken) {
+    throw new Error("لم يرجع Google idToken صالحاً");
+  }
+
+  const firebaseCredential = GoogleAuthProvider.credential(idToken);
+  return await signInWithCredential(auth(), firebaseCredential);
+}
+
 /**
  * Start Google sign-in using redirect. This will navigate away from the page and
  * return after authentication is complete.
@@ -71,8 +112,9 @@ export async function startGoogleLoginRedirect() {
  * محاولة تسجيل الدخول عبر Google باستخدام Popup (أفضل على بعض المتصفحات التي تعطل تدفق Redirect).
  */
 export async function startGoogleLoginPopup() {
-  // Popup لا يستخدم تدفق Redirect، لذلك لا نضع علامة "redirect pending"
-  // حتى لا يظهر تنبيه الرجوع من Google في إعادة تحميل لاحقة بشكل خاطئ.
+  if (isCordovaNativeGoogleAvailable()) {
+    return await startCordovaNativeGoogleLogin();
+  }
   return await signInWithPopup(auth(), provider);
 }
 
