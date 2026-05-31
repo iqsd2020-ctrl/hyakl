@@ -270,18 +270,14 @@ export function renderQuestList() {
 }
 
 // --- تفعيل الأزرار (Event Listeners) ---
-// يجب التأكد من تحميل الصفحة قبل ربط العناصر
-document.addEventListener("DOMContentLoaded", () => {
-  const openBtn = document.getElementById("btn-open-quests");
-  const closeBtn = document.getElementById("close-quest-btn");
-  const grandBtn = document.getElementById("claim-grand-prize-btn");
+const openBtn = document.getElementById("btn-open-quests");
+const closeBtn = document.getElementById("close-quest-btn");
+const grandBtn = document.getElementById("claim-grand-prize-btn");
 
-  if (openBtn) openBtn.addEventListener("click", openQuestModal);
-  if (closeBtn) closeBtn.addEventListener("click", closeQuestModal);
+if (openBtn) openBtn.addEventListener("click", openQuestModal);
+if (closeBtn) closeBtn.addEventListener("click", closeQuestModal);
 
-  // ربط زر الجائزة الكبرى
-  if (grandBtn) grandBtn.addEventListener("click", claimGrandPrize);
-});
+if (grandBtn) grandBtn.addEventListener("click", claimGrandPrize);
 
 // ==========================================
 // 🎁 نظام المهام اليومية: دوال الاستلام (Logic)
