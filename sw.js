@@ -1,5 +1,5 @@
 const CONFIG = {
-  version: "7.0.22",
+  version: "7.0.23",
   staticAssets: [
     "./",
     "./index.html",
