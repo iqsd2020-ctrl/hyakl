@@ -305,9 +305,18 @@ async function loadLeaderboard() {
         if (progressCtl && progressCtl.bumpTo) progressCtl.bumpTo(28);
 
         // --- جلب بطل الشهر الماضي ---
-        const winnerDoc = await getDoc(doc(db, "winners", lastMonthKey));
-        let lastMonthWinner = null;
+        const winnerRef = doc(db, "winners", lastMonthKey);
+let winnerDoc = await getDoc(winnerRef);
+let lastMonthWinner = null;
 
+if (!winnerDoc.exists()) {
+    try {
+        await saveMonthlyWinner(lastMonthKey);
+        winnerDoc = await getDoc(winnerRef);
+    } catch (e) {
+        console.error("Auto create monthly winner failed:", e);
+    }
+}
         if (progressCtl && progressCtl.bumpTo) progressCtl.bumpTo(45);
 
         if (winnerDoc.exists()) {

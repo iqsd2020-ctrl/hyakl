@@ -31,9 +31,20 @@ onAuthStateChanged(auth, async (user) => {
             // إذا كان هناك مزامنة معلّقة من وضع الضيف (Popup/Redirect) نفّذها الآن قبل التحميل.
             await syncGuestIfPending(user);
 
-            await loadProfile(effectiveUserId);
-            setupPresenceSystem();
-            window.toArabicDigits = window.toArabicDigits || function (value) {
+         await loadProfile(effectiveUserId);
+
+try {
+    const now = new Date();
+    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const previousMonthKey = `${previousMonth.getFullYear()}-${String(previousMonth.getMonth() + 1).padStart(2, '0')}`;
+
+    await saveMonthlyWinner(previousMonthKey);
+} catch (e) {
+    console.error('Monthly winner auto check failed:', e);
+}
+
+setupPresenceSystem();
+window.toArabicDigits = window.toArabicDigits || function (value) {
                 const s = (value === null || value === undefined) ? '' : String(value);
                 if (!/\d/.test(s)) return s;
                 return s.replace(/\d/g, (d) => '٠١٢٣٤٥٦٧٨٩'[d]);
